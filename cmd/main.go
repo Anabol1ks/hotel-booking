@@ -2,6 +2,7 @@ package main
 
 import (
 	"hotel-booking/internal/auth"
+	"hotel-booking/internal/bookings"
 	"hotel-booking/internal/hotels"
 	"hotel-booking/internal/storage"
 	"hotel-booking/internal/users"
@@ -22,7 +23,7 @@ func main() {
 	storage.ConnectDatabase()
 
 	// Выполнение миграций
-	err = storage.DB.AutoMigrate(&users.User{}, &hotels.Hotel{}, &hotels.Room{})
+	err = storage.DB.AutoMigrate(&users.User{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
 	if err != nil {
 		log.Fatal("Ошибка миграции:", err)
 	}
@@ -40,8 +41,11 @@ func main() {
 	authorized.POST("/hotels", hotels.CreateHotelHandler)
 	authorized.POST("/rooms", hotels.CreateRoomHandler)
 
+	authorized.POST("/bookings", bookings.CreateBookingHandler)
+
 	r.GET("/hotels", hotels.GetHotelsHandler)
 	r.GET("/rooms", hotels.GetRoomsHandler)
+	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)

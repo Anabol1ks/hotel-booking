@@ -41,7 +41,7 @@ func CreateHotelHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, hotel)
+	c.JSON(http.StatusCreated, hotel)
 }
 
 func GetHotelsHandler(c *gin.Context) {
@@ -94,7 +94,7 @@ func CreateRoomHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, room)
+	c.JSON(http.StatusCreated, room)
 }
 
 func GetRoomsHandler(c *gin.Context) {
