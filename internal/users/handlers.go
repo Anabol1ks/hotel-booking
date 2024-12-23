@@ -44,3 +44,21 @@ func UpdateRoleHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Роль успешно обновлена"})
 }
+
+// Управление пользователями для администратора
+func GetUsersHandler(c *gin.Context) {
+	role := c.GetString("role")
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Только администратор может просматривать пользователей"})
+		return
+	}
+
+	var users []User
+	if err := storage.DB.Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении пользователей"})
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+
+}

@@ -51,6 +51,14 @@ func main() {
 	authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 
+	owners := authorized.Group("/owners")
+	owners.GET("/hotels", hotels.GetOwnerHotelsHandler)
+	owners.GET("/bookings", bookings.GetOwnerBookingsHandler)
+
+	admins := authorized.Group("/admin")
+	admins.GET("/users", users.GetUsersHandler)
+	admins.PUT("/users/:id/role", users.UpdateRoleHandler)
+
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
 	}

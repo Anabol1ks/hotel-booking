@@ -122,3 +122,22 @@ func GetRoomsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, rooms)
 }
+
+// просмотр своих отелей для владельца
+func GetOwnerHotelsHandler(c *gin.Context) {
+	ownerID := c.GetUint("user_id")
+	role := c.GetString("role")
+
+	if role != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	var hotels []Hotel
+	if err := storage.DB.Where("owner_id = ?", ownerID).Find(&hotels).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении отелей"})
+		return
+	}
+
+	c.JSON(http.StatusOK, hotels)
+}

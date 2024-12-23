@@ -74,3 +74,31 @@ func GetRoomBookingsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, bookings)
 }
+
+// Просмотр забронированных номеров для владельца
+func GetOwnerBookingsHandler(c *gin.Context) {
+	ownerID := c.GetUint("user_id")
+
+	role := c.GetString("role")
+
+	if role != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	var bookings []Booking
+	query := `
+	SELECT b.*
+	FROM bookings b
+	JOIN rooms r ON b.room_id = r.id
+	JOIN hotels h ON r.hotel_id = h.id
+	WHERE h.owner_id = ?
+	`
+
+	if err := storage.DB.Raw(query, ownerID).Scan(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении бронирований"})
+		return
+	}
+
+	c.JSON(http.StatusOK, bookings)
+}
