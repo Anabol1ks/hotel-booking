@@ -34,7 +34,14 @@ func main() {
 
 	authorized := r.Group("/")
 	authorized.Use(auth.AuthMiddleware())
-	// Добавляй защищённые маршруты здесь
+	// смена роли
+	authorized.PUT("/users/:id/role", users.UpdateRoleHandler)
+
+	authorized.POST("/hotels", hotels.CreateHotelHandler)
+	authorized.POST("/rooms", hotels.CreateRoomHandler)
+
+	r.GET("/hotels", hotels.GetHotelsHandler)
+	r.GET("/rooms", hotels.GetRoomsHandler)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
