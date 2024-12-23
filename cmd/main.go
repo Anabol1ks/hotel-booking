@@ -4,6 +4,7 @@ import (
 	"hotel-booking/internal/auth"
 	"hotel-booking/internal/bookings"
 	"hotel-booking/internal/hotels"
+	"hotel-booking/internal/payments"
 	"hotel-booking/internal/storage"
 	"hotel-booking/internal/users"
 	"log"
@@ -46,6 +47,9 @@ func main() {
 	r.GET("/hotels", hotels.GetHotelsHandler)
 	r.GET("/rooms", hotels.GetRoomsHandler)
 	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
+
+	authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
+	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
