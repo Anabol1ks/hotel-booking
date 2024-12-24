@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "hotel-booking/docs"
 	"hotel-booking/internal/auth"
 	"hotel-booking/internal/bookings"
 	"hotel-booking/internal/hotels"
@@ -9,10 +10,17 @@ import (
 	"hotel-booking/internal/users"
 	"log"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
+// @Title Система бронирования номеров
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	// Загружаем .env
 	err := godotenv.Load()
@@ -30,6 +38,8 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	r.POST("/auth/register", auth.RegisterHandler)
 	r.POST("/auth/login", auth.LoginHandler)

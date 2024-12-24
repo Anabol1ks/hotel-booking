@@ -1,0 +1,70 @@
+definitions:
+  auth.RegisterInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone
+    type: object
+  response.ErrorResponse:
+    description: Стандартный ответ при ошибке
+    properties:
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Система бронирования номеров
+paths:
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя с указанием имени, почты, пароля
+        и телефона
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'message: Регистрация успешна'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Описание ошибки валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Почта или телефон уже зарегистрированы
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Не удалось хешировать пароль или создать пользователя
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Регистрация пользователя
+      tags:
+      - Пользователи
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -12,6 +12,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 type RegisterInput struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
@@ -19,6 +23,18 @@ type RegisterInput struct {
 	Phone    string `json:"phone" binding:"required"`
 }
 
+// RegisterHandler godoc
+// @Summary Регистрация пользователя
+// @Description Регистрирует нового пользователя с указанием имени, почты, пароля и телефона
+// @Tags Пользователи
+// @Accept json
+// @Produce json
+// @Param input body RegisterInput true "Данные для регистрации"
+// @Success 201 {object} map[string]string "message: Регистрация успешна"
+// @Failure 400 {object} response.ErrorResponse "Описание ошибки валидации"
+// @Failure 409 {object} response.ErrorResponse "Почта или телефон уже зарегистрированы"
+// @Failure 500 {object} response.ErrorResponse "Не удалось хешировать пароль или создать пользователя"
+// @Router /auth/register [post]
 func RegisterHandler(c *gin.Context) {
 	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
