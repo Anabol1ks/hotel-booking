@@ -9,6 +9,7 @@ import (
 	"hotel-booking/internal/storage"
 	"hotel-booking/internal/users"
 	"log"
+	"os"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -22,17 +23,21 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	// Загружаем .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+	key := os.Getenv("TEST_ENV")
+	if key == "" {
+		log.Println("Переменной среды нет, используется .env")
+		// Загружаем .env
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Ошибка загрузки .env файла")
+		}
 	}
 
 	// Подключение базы данных
 	storage.ConnectDatabase()
 
 	// Выполнение миграций
-	err = storage.DB.AutoMigrate(&users.User{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
+	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
 	if err != nil {
 		log.Fatal("Ошибка миграции:", err)
 	}
