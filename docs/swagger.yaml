@@ -25,6 +25,19 @@ definitions:
     - password
     - phone
     type: object
+  bookings.CreateBookingInput:
+    properties:
+      end_date:
+        type: string
+      room_id:
+        type: integer
+      start_date:
+        type: string
+    required:
+    - end_date
+    - room_id
+    - start_date
+    type: object
   hotels.CreateHotelInput:
     properties:
       address:
@@ -54,6 +67,23 @@ definitions:
     - hotel_id
     - price
     - room_type
+    type: object
+  response.BookingResponse:
+    properties:
+      end_date:
+        type: string
+      payment_status:
+        description: Статус оплаты
+        type: string
+      room_id:
+        type: integer
+      start_date:
+        type: string
+      total_cost:
+        description: Итоговая стоимость
+        type: number
+      user_id:
+        type: integer
     type: object
   response.ErrorResponse:
     description: Стандартный ответ при ошибке
@@ -164,7 +194,7 @@ paths:
       summary: Получение списка пользователей
       tags:
       - admin
-  /admin/users/:id/role:
+  /admin/users/{id}/role:
     put:
       consumes:
       - application/json
@@ -275,6 +305,44 @@ paths:
       summary: Регистрация пользователя
       tags:
       - auth
+  /bookings:
+    post:
+      description: Бронирование номера только для авторизованных пользователей
+      parameters:
+      - description: Данные для бронирования
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/bookings.CreateBookingInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Данные о бранировании
+          schema:
+            $ref: '#/definitions/response.BookingResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Номер уже забронирован в этот период
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при проверке доступности номера или при создании бронирования
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Бронирование номера
+      tags:
+      - bookings
   /hotels:
     get:
       description: Возвращает список всех отелей, включая связанные номера.
@@ -294,6 +362,31 @@ paths:
       summary: Получение списка отелей
       tags:
       - hotels
+  /owners/bookings:
+    get:
+      description: Получение бронирований для владельца
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Данные о бранировании
+          schema:
+            items:
+              $ref: '#/definitions/response.BookingResponse'
+            type: array
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при получении бронирований
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение бронирований владельца
+      tags:
+      - bookings
   /owners/hotels:
     get:
       description: Возвращает список отелей, принадлежащих текущему владельцу
@@ -316,7 +409,6 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
-      - ApiKeyAuth: []
       summary: Получение списка отелей владельца
       tags:
       - hotels
@@ -427,6 +519,31 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Получение списка номеров
+      tags:
+      - rooms
+  /rooms/{id}/bookings:
+    get:
+      description: Получение бронирований для номера
+      parameters:
+      - description: ID номера
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Данные о бранировании
+          schema:
+            items:
+              $ref: '#/definitions/response.BookingResponse'
+            type: array
+        "500":
+          description: Ошибка при получении списка бронирований
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получение бронирований для номера
       tags:
       - rooms
 securityDefinitions:

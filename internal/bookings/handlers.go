@@ -15,6 +15,19 @@ type CreateBookingInput struct {
 	EndDate   time.Time `json:"end_date" binding:"required"`
 }
 
+// @Security BearerAuth
+// CreateBookingHandler godoc
+// @Summary Бронирование номера
+// @Description Бронирование номера только для авторизованных пользователей
+// @Tags bookings
+// @Produce json
+// @Param input body CreateBookingInput true "Данные для бронирования"
+// @Success 201 {object} response.BookingResponse "Данные о бранировании"
+// @Failure 400 {object} response.ErrorResponse "Ошибка валидации"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Failure 409 {object} response.ErrorResponse "Номер уже забронирован в этот период"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при проверке доступности номера или при создании бронирования"
+// @Router /bookings [post]
 func CreateBookingHandler(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
@@ -39,7 +52,7 @@ func CreateBookingHandler(c *gin.Context) {
 	}
 
 	if len(overlappingBookings) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Номер уже забронирован в этот период"})
+		c.JSON(http.StatusConflict, gin.H{"error": "Номер уже забронирован в этот период"})
 		return
 	}
 
@@ -62,6 +75,16 @@ func CreateBookingHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, booking)
 }
+
+// GetRoomBookingsHandler godoc
+// @Summary Получение бронирований для номера
+// @Description Получение бронирований для номера
+// @Tags rooms
+// @Produce json
+// @Param id path int true "ID номера"
+// @Success 201 {array} response.BookingResponse "Данные о бранировании"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении списка бронирований"
+// @Router /rooms/{id}/bookings [get]
 func GetRoomBookingsHandler(c *gin.Context) {
 	roomID := c.Param("id")
 
@@ -74,6 +97,16 @@ func GetRoomBookingsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, bookings)
 }
 
+// @Security BearerAuth
+// GetOwnerBookingsHandler godoc
+// @Summary Получение бронирований владельца
+// @Description Получение бронирований для владельца
+// @Tags bookings
+// @Produce json
+// @Success 201 {array} response.BookingResponse "Данные о бранировании"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении бронирований"
+// @Router /owners/bookings [get]
 func GetOwnerBookingsHandler(c *gin.Context) {
 	ownerID := c.GetUint("user_id")
 

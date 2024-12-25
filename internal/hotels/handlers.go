@@ -172,7 +172,6 @@ func GetRoomsHandler(c *gin.Context) {
 // @Summary Получение списка отелей владельца
 // @Description Возвращает список отелей, принадлежащих текущему владельцу
 // @Tags hotels
-// @Security ApiKeyAuth
 // @Produce json
 // @Success 200 {array} response.HotelResponse "Список отелей"
 // @Failure 403 {object} response.ErrorResponse "Доступ запрещен"

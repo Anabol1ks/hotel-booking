@@ -25,7 +25,7 @@ type UpdateRoleInput struct {
 // @Failure 403 {object} response.ErrorResponse "Только администратор может изменять роли"
 // @Failure 404 {object} response.ErrorResponse "Пользователь не найден"
 // @Failure 500 {object} response.ErrorResponse "Не удалось обновить роль"
-// @Router /admin/users/:id/role [put]
+// @Router /admin/users/{id}/role [put]
 func UpdateRoleHandler(c *gin.Context) {
 	// Проверка роли администратора
 	role := c.GetString("role")

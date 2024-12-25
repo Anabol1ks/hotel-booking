@@ -58,7 +58,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/users/:id/role": {
+        "/admin/users/{id}/role": {
             "put": {
                 "security": [
                     {
@@ -226,6 +226,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/bookings": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Бронирование номера только для авторизованных пользователей",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Бронирование номера",
+                "parameters": [
+                    {
+                        "description": "Данные для бронирования",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bookings.CreateBookingInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Данные о бранировании",
+                        "schema": {
+                            "$ref": "#/definitions/response.BookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Номер не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Номер уже забронирован в этот период",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при проверке доступности номера или при создании бронирования",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/hotels": {
             "get": {
                 "description": "Возвращает список всех отелей, включая связанные номера.",
@@ -255,14 +315,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/owners/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение бронирований для владельца",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Получение бронирований владельца",
+                "responses": {
+                    "201": {
+                        "description": "Данные о бранировании",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.BookingResponse"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении бронирований",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/owners/hotels": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
-                    },
-                    {
-                        "ApiKeyAuth": []
                     }
                 ],
                 "description": "Возвращает список отелей, принадлежащих текущему владельцу",
@@ -464,6 +561,44 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/rooms/{id}/bookings": {
+            "get": {
+                "description": "Получение бронирований для номера",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Получение бронирований для номера",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID номера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Данные о бранировании",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.BookingResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении списка бронирований",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -501,6 +636,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "bookings.CreateBookingInput": {
+            "type": "object",
+            "required": [
+                "end_date",
+                "room_id",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "integer"
+                },
+                "start_date": {
                     "type": "string"
                 }
             }
@@ -546,6 +700,31 @@ const docTemplate = `{
                 },
                 "room_type": {
                     "type": "string"
+                }
+            }
+        },
+        "response.BookingResponse": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "payment_status": {
+                    "description": "Статус оплаты",
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "total_cost": {
+                    "description": "Итоговая стоимость",
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

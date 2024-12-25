@@ -1,5 +1,7 @@
 package response
 
+import "time"
+
 // ErrorResponse представляет стандартный формат ответа при ошибке
 // @Description Стандартный ответ при ошибке
 type ErrorResponse struct {
@@ -39,4 +41,13 @@ type RoomResponse struct {
 	Amenities string  `json:"amenities"` // Удобства
 	Capacity  int     `json:"capacity"`  // Количество гостей
 	Available bool    `json:"available"` // Наличие
+}
+
+type BookingResponse struct {
+	RoomID        uint      `json:"room_id"`
+	UserID        uint      `json:"user_id"`
+	StartDate     time.Time `json:"start_date"`
+	EndDate       time.Time `json:"end_date"`
+	TotalCost     float64   `json:"total_cost"`     //Итоговая стоимость
+	PaymentStatus string    `json:"payment_status"` //Статус оплаты
 }
