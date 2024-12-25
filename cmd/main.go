@@ -46,11 +46,6 @@ func main() {
 
 	authorized := r.Group("/")
 	authorized.Use(auth.AuthMiddleware())
-	// смена роли
-	authorized.PUT("/users/:id/role", users.UpdateRoleHandler)
-
-	authorized.POST("/hotels", hotels.CreateHotelHandler)
-	authorized.POST("/rooms", hotels.CreateRoomHandler)
 
 	authorized.POST("/bookings", bookings.CreateBookingHandler)
 
@@ -62,6 +57,8 @@ func main() {
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 
 	owners := authorized.Group("/owners")
+	owners.POST("/hotels", hotels.CreateHotelHandler)
+	owners.POST("/rooms", hotels.CreateRoomHandler)
 	owners.GET("/hotels", hotels.GetOwnerHotelsHandler)
 	owners.GET("/bookings", bookings.GetOwnerBookingsHandler)
 

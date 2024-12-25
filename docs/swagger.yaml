@@ -1,4 +1,14 @@
 definitions:
+  auth.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
   auth.RegisterInput:
     properties:
       email:
@@ -15,16 +25,221 @@ definitions:
     - password
     - phone
     type: object
+  hotels.CreateHotelInput:
+    properties:
+      address:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - address
+    - name
+    type: object
+  hotels.CreateRoomInput:
+    properties:
+      amenities:
+        type: string
+      capacity:
+        type: integer
+      hotel_id:
+        type: integer
+      price:
+        type: number
+      room_type:
+        type: string
+    required:
+    - capacity
+    - hotel_id
+    - price
+    - room_type
+    type: object
   response.ErrorResponse:
     description: Стандартный ответ при ошибке
     properties:
       error:
         type: string
     type: object
+  response.HotelResponse:
+    properties:
+      address:
+        type: string
+      description:
+        type: string
+      name:
+        type: string
+      owner_id:
+        type: integer
+      rooms:
+        items:
+          $ref: '#/definitions/response.RoomResponse'
+        type: array
+    type: object
+  response.RoomResponse:
+    properties:
+      amenities:
+        description: Удобства
+        type: string
+      available:
+        description: Наличие
+        type: boolean
+      capacity:
+        description: Количество гостей
+        type: integer
+      hotel_id:
+        description: ID отеля
+        type: integer
+      price:
+        description: Цена за ночь
+        type: number
+      room_type:
+        description: Тип номера (стандартный, люкс и т.д.)
+        type: string
+    type: object
+  response.SuccessResponse:
+    description: Стандартный ответ при успешном выполнении
+    properties:
+      message:
+        type: string
+    type: object
+  response.TokenResponse:
+    properties:
+      token:
+        example: Ваш токен
+        type: string
+    type: object
+  response.UserResponse:
+    properties:
+      Email:
+        type: string
+      ID:
+        type: integer
+      Name:
+        type: string
+      Phone:
+        type: string
+      Role:
+        type: string
+    type: object
+  users.UpdateRoleInput:
+    properties:
+      role:
+        enum:
+        - owner
+        - admin
+        - client
+        type: string
+    required:
+    - role
+    type: object
 info:
   contact: {}
   title: Система бронирования номеров
 paths:
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Получение списка пользователей через панель администратора
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список пользователей
+          schema:
+            items:
+              $ref: '#/definitions/response.UserResponse'
+            type: array
+        "403":
+          description: Только администратор может просматривать пользователей
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при получении пользователей
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка пользователей
+      tags:
+      - admin
+  /admin/users/:id/role:
+    put:
+      consumes:
+      - application/json
+      description: Обновление роли пользователя через панель администратора
+      parameters:
+      - description: 'Данные для обновления роли пользователя. Возможные значения:
+          owner, admin, client'
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/users.UpdateRoleInput'
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Роль успешно обновлена
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Описание ошибки валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Только администратор может изменять роли
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Не удалось обновить роль
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление роли пользователя
+      tags:
+      - admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход пользователя с указанием почты и пароля
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Получение токена
+          schema:
+            $ref: '#/definitions/response.TokenResponse'
+        "400":
+          description: Описание ошибки валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Неверный email или пароль
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Вход пользователя
+      tags:
+      - auth
   /auth/register:
     post:
       consumes:
@@ -42,11 +257,9 @@ paths:
       - application/json
       responses:
         "201":
-          description: 'message: Регистрация успешна'
+          description: Регистрация успешна
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.SuccessResponse'
         "400":
           description: Описание ошибки валидации
           schema:
@@ -61,7 +274,161 @@ paths:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Регистрация пользователя
       tags:
-      - Пользователи
+      - auth
+  /hotels:
+    get:
+      description: Возвращает список всех отелей, включая связанные номера.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отелей
+          schema:
+            items:
+              $ref: '#/definitions/response.HotelResponse'
+            type: array
+        "500":
+          description: Ошибка при получении отелей
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получение списка отелей
+      tags:
+      - hotels
+  /owners/hotels:
+    get:
+      description: Возвращает список отелей, принадлежащих текущему владельцу
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список отелей
+          schema:
+            items:
+              $ref: '#/definitions/response.HotelResponse'
+            type: array
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при получении отелей
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      - ApiKeyAuth: []
+      summary: Получение списка отелей владельца
+      tags:
+      - hotels
+    post:
+      consumes:
+      - application/json
+      description: Обрабатывает запрос на создание нового отеля. Только владельцы
+        могут создавать новые отели.
+      parameters:
+      - description: Данные для создания нового отеля
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/hotels.CreateHotelInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Новый отель успешно создан
+          schema:
+            $ref: '#/definitions/response.HotelResponse'
+        "400":
+          description: Ошибка валидации входных данных
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Только владельцы могут создавать отели
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при создании отеля
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание отеля владельцем
+      tags:
+      - hotels
+  /owners/rooms:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый номер в отеле. Доступно только для владельцев.
+      parameters:
+      - description: Данные номера
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/hotels.CreateRoomInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Созданный номер
+          schema:
+            $ref: '#/definitions/response.RoomResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Отель не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание нового номера
+      tags:
+      - rooms
+  /rooms:
+    get:
+      description: Возвращает отфильтрованный список номеров с возможностью фильтрации
+        по цене и вместимости
+      parameters:
+      - description: Минимальная цена
+        in: query
+        name: min_price
+        type: string
+      - description: Максимальная цена
+        in: query
+        name: max_price
+        type: string
+      - description: Минимальная вместимость
+        in: query
+        name: capacity
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список номеров
+          schema:
+            items:
+              $ref: '#/definitions/response.RoomResponse'
+            type: array
+        "500":
+          description: Ошибка при получении номеров
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получение списка номеров
+      tags:
+      - rooms
 securityDefinitions:
   BearerAuth:
     in: header

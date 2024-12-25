@@ -5,6 +5,165 @@
         "contact": {}
     },
     "paths": {
+        "/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение списка пользователей через панель администратора",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получение списка пользователей",
+                "responses": {
+                    "200": {
+                        "description": "Список пользователей",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.UserResponse"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Только администратор может просматривать пользователей",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении пользователей",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/:id/role": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обновление роли пользователя через панель администратора",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновление роли пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для обновления роли пользователя. Возможные значения: owner, admin, client",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/users.UpdateRoleInput"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Роль успешно обновлена",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Описание ошибки валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Только администратор может изменять роли",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось обновить роль",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Вход пользователя с указанием почты и пароля",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Вход пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные для входа",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Получение токена",
+                        "schema": {
+                            "$ref": "#/definitions/response.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Описание ошибки валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неверный email или пароль",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Регистрирует нового пользователя с указанием имени, почты, пароля и телефона",
@@ -15,7 +174,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "Пользователи"
+                    "auth"
                 ],
                 "summary": "Регистрация пользователя",
                 "parameters": [
@@ -31,12 +190,9 @@
                 ],
                 "responses": {
                     "201": {
-                        "description": "message: Регистрация успешна",
+                        "description": "Регистрация успешна",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.SuccessResponse"
                         }
                     },
                     "400": {
@@ -59,9 +215,263 @@
                     }
                 }
             }
+        },
+        "/hotels": {
+            "get": {
+                "description": "Возвращает список всех отелей, включая связанные номера.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hotels"
+                ],
+                "summary": "Получение списка отелей",
+                "responses": {
+                    "200": {
+                        "description": "Список отелей",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.HotelResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении отелей",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owners/hotels": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Возвращает список отелей, принадлежащих текущему владельцу",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hotels"
+                ],
+                "summary": "Получение списка отелей владельца",
+                "responses": {
+                    "200": {
+                        "description": "Список отелей",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.HotelResponse"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении отелей",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Обрабатывает запрос на создание нового отеля. Только владельцы могут создавать новые отели.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "hotels"
+                ],
+                "summary": "Создание отеля владельцем",
+                "parameters": [
+                    {
+                        "description": "Данные для создания нового отеля",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hotels.CreateHotelInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Новый отель успешно создан",
+                        "schema": {
+                            "$ref": "#/definitions/response.HotelResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации входных данных",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Только владельцы могут создавать отели",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при создании отеля",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/owners/rooms": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает новый номер в отеле. Доступно только для владельцев.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Создание нового номера",
+                "parameters": [
+                    {
+                        "description": "Данные номера",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hotels.CreateRoomInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Созданный номер",
+                        "schema": {
+                            "$ref": "#/definitions/response.RoomResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Отель не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/rooms": {
+            "get": {
+                "description": "Возвращает отфильтрованный список номеров с возможностью фильтрации по цене и вместимости",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Получение списка номеров",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Минимальная цена",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Максимальная цена",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Минимальная вместимость",
+                        "name": "capacity",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список номеров",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.RoomResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении номеров",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "auth.LoginInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "auth.RegisterInput": {
             "type": "object",
             "required": [
@@ -85,12 +495,162 @@
                 }
             }
         },
+        "hotels.CreateHotelInput": {
+            "type": "object",
+            "required": [
+                "address",
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "hotels.CreateRoomInput": {
+            "type": "object",
+            "required": [
+                "capacity",
+                "hotel_id",
+                "price",
+                "room_type"
+            ],
+            "properties": {
+                "amenities": {
+                    "type": "string"
+                },
+                "capacity": {
+                    "type": "integer"
+                },
+                "hotel_id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "room_type": {
+                    "type": "string"
+                }
+            }
+        },
         "response.ErrorResponse": {
             "description": "Стандартный ответ при ошибке",
             "type": "object",
             "properties": {
                 "error": {
                     "type": "string"
+                }
+            }
+        },
+        "response.HotelResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "integer"
+                },
+                "rooms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.RoomResponse"
+                    }
+                }
+            }
+        },
+        "response.RoomResponse": {
+            "type": "object",
+            "properties": {
+                "amenities": {
+                    "description": "Удобства",
+                    "type": "string"
+                },
+                "available": {
+                    "description": "Наличие",
+                    "type": "boolean"
+                },
+                "capacity": {
+                    "description": "Количество гостей",
+                    "type": "integer"
+                },
+                "hotel_id": {
+                    "description": "ID отеля",
+                    "type": "integer"
+                },
+                "price": {
+                    "description": "Цена за ночь",
+                    "type": "number"
+                },
+                "room_type": {
+                    "description": "Тип номера (стандартный, люкс и т.д.)",
+                    "type": "string"
+                }
+            }
+        },
+        "response.SuccessResponse": {
+            "description": "Стандартный ответ при успешном выполнении",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "Ваш токен"
+                }
+            }
+        },
+        "response.UserResponse": {
+            "type": "object",
+            "properties": {
+                "Email": {
+                    "type": "string"
+                },
+                "ID": {
+                    "type": "integer"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Phone": {
+                    "type": "string"
+                },
+                "Role": {
+                    "type": "string"
+                }
+            }
+        },
+        "users.UpdateRoleInput": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "owner",
+                        "admin",
+                        "client"
+                    ]
                 }
             }
         }

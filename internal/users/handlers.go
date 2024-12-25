@@ -8,9 +8,24 @@ import (
 )
 
 type UpdateRoleInput struct {
-	Role string `json:"role" binding:"required"`
+	Role string `json:"role" binding:"required" enums:"owner,admin,client"`
 }
 
+// @Security BearerAuth
+// UpdateRoleHandler godoc
+// @Summary Обновление роли пользователя
+// @Description Обновление роли пользователя через панель администратора
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param input body UpdateRoleInput true "Данные для обновления роли пользователя. Возможные значения: owner, admin, client"
+// @Param id path int true "ID пользователя"
+// @Success 200 {object} response.SuccessResponse "Роль успешно обновлена"
+// @Failure 400 {object} response.ErrorResponse "Описание ошибки валидации"
+// @Failure 403 {object} response.ErrorResponse "Только администратор может изменять роли"
+// @Failure 404 {object} response.ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} response.ErrorResponse "Не удалось обновить роль"
+// @Router /admin/users/:id/role [put]
 func UpdateRoleHandler(c *gin.Context) {
 	// Проверка роли администратора
 	role := c.GetString("role")
@@ -25,6 +40,11 @@ func UpdateRoleHandler(c *gin.Context) {
 	var input UpdateRoleInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	validRoles := map[string]bool{"owner": true, "client": true, "admin": true}
+	if !validRoles[input.Role] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверная роль"})
 		return
 	}
 
@@ -45,7 +65,17 @@ func UpdateRoleHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Роль успешно обновлена"})
 }
 
-// Управление пользователями для администратора
+// @Security BearerAuth
+// GetUsersHandler godoc
+// @Summary Получение списка пользователей
+// @Description Получение списка пользователей через панель администратора
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Success 200 {array} response.UserResponse "Список пользователей"
+// @Failure 403 {object} response.ErrorResponse "Только администратор может просматривать пользователей"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении пользователей"
+// @Router /admin/users [get]
 func GetUsersHandler(c *gin.Context) {
 	role := c.GetString("role")
 	if role != "admin" {

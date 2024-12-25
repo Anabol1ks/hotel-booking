@@ -62,7 +62,6 @@ func CreateBookingHandler(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, booking)
 }
-
 func GetRoomBookingsHandler(c *gin.Context) {
 	roomID := c.Param("id")
 
@@ -75,7 +74,6 @@ func GetRoomBookingsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, bookings)
 }
 
-// Просмотр забронированных номеров для владельца
 func GetOwnerBookingsHandler(c *gin.Context) {
 	ownerID := c.GetUint("user_id")
 
