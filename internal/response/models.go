@@ -51,3 +51,7 @@ type BookingResponse struct {
 	TotalCost     float64   `json:"total_cost"`     //Итоговая стоимость
 	PaymentStatus string    `json:"payment_status"` //Статус оплаты
 }
+
+type CreatePaymentResponse struct {
+	PaymentURL string `json:"payment_url" example:"ссылка на оплату"` // Ссылка для оплаты
+}

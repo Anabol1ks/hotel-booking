@@ -169,6 +169,7 @@ func GetRoomsHandler(c *gin.Context) {
 }
 
 // @Security BearerAuth
+// GetOwnerHotelsHandler godoc
 // @Summary Получение списка отелей владельца
 // @Description Возвращает список отелей, принадлежащих текущему владельцу
 // @Tags hotels

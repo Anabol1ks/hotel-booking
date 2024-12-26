@@ -286,6 +286,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/bookings/{id}/pay": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создает платеж через YooKassa для указанного бронирования и возвращает ссылку для оплаты.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Создание платежа для бронирования",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Идентификатор бронирования",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ссылка для оплаты успешно создана",
+                        "schema": {
+                            "$ref": "#/definitions/response.CreatePaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный запрос или бронирование уже оплачено",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Бронирование не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера или ошибка платежной системы",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/hotels": {
             "get": {
                 "description": "Возвращает список всех отелей, включая связанные номера.",
@@ -513,6 +568,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/payments/callback": {
+            "post": {
+                "description": "Обрабатывает уведомления от платежной системы и обновляет статус оплаты для указанного бронирования.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Webhook для обработки статуса оплаты",
+                "parameters": [
+                    {
+                        "description": "Данные вебхука от платежной системы",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/payments.PaymentCallbackRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Статус оплаты обновлен",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные запроса",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Бронирование не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/rooms": {
             "get": {
                 "description": "Возвращает отфильтрованный список номеров с возможностью фильтрации по цене и вместимости",
@@ -703,6 +810,47 @@ const docTemplate = `{
                 }
             }
         },
+        "payments.PaymentCallbackRequest": {
+            "type": "object",
+            "properties": {
+                "object": {
+                    "description": "Основной объект данных",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/payments.PaymentObject"
+                        }
+                    ]
+                }
+            }
+        },
+        "payments.PaymentMetadata": {
+            "type": "object",
+            "properties": {
+                "booking_id": {
+                    "description": "Уникальный идентификатор бронирования",
+                    "type": "string",
+                    "example": "1"
+                }
+            }
+        },
+        "payments.PaymentObject": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "description": "Метаданные оплаты",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/payments.PaymentMetadata"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "Статус оплаты",
+                    "type": "string",
+                    "example": "succeeded"
+                }
+            }
+        },
         "response.BookingResponse": {
             "type": "object",
             "properties": {
@@ -725,6 +873,16 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "response.CreatePaymentResponse": {
+            "type": "object",
+            "properties": {
+                "payment_url": {
+                    "description": "Ссылка для оплаты",
+                    "type": "string",
+                    "example": "ссылка на оплату"
                 }
             }
         },

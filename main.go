@@ -25,7 +25,7 @@ import (
 func main() {
 	key := os.Getenv("TEST_ENV")
 	if key == "" {
-		log.Println("Переменной среды нет, используется .env")
+		log.Println("\nПеременной среды нет, используется .env")
 		// Загружаем .env
 		err := godotenv.Load()
 		if err != nil {

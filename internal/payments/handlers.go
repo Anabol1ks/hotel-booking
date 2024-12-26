@@ -28,6 +28,18 @@ type PaymentRequest struct {
 	Metadata    map[string]interface{} `json:"metadata"`
 }
 
+// @Security BearerAuth
+// @Summary Создание платежа для бронирования
+// @Description Создает платеж через YooKassa для указанного бронирования и возвращает ссылку для оплаты.
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param id path int true "Идентификатор бронирования"
+// @Success 200 {object} response.CreatePaymentResponse "Ссылка для оплаты успешно создана"
+// @Failure 400 {object} response.ErrorResponse "Некорректный запрос или бронирование уже оплачено"
+// @Failure 404 {object} response.ErrorResponse "Бронирование не найдено"
+// @Failure 500 {object} response.ErrorResponse "Внутренняя ошибка сервера или ошибка платежной системы"
+// @Router /bookings/{id}/pay [post]
 func CreatePaymentHandler(c *gin.Context) {
 	bookingID := c.Param("id")
 
@@ -106,6 +118,18 @@ func CreatePaymentHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"payment_url": confirmationURL})
 }
 
+// PaymentCallbackHandler обрабатывает уведомления о статусе оплаты от платежной системы.
+// @Summary Webhook для обработки статуса оплаты
+// @Description Обрабатывает уведомления от платежной системы и обновляет статус оплаты для указанного бронирования.
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param request body PaymentCallbackRequest true "Данные вебхука от платежной системы"
+// @Success 200 {object} response.SuccessResponse "Статус оплаты обновлен"
+// @Failure 400 {object} response.ErrorResponse "Некорректные данные запроса"
+// @Failure 404 {object} response.ErrorResponse "Бронирование не найдено"
+// @Failure 500 {object} response.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /payments/callback [post]
 func PaymentCallbackHandler(c *gin.Context) {
 	var callbackData map[string]interface{}
 	if err := json.NewDecoder(c.Request.Body).Decode(&callbackData); err != nil {
@@ -161,4 +185,19 @@ func PaymentCallbackHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Статус оплаты обновлен"})
+}
+
+type PaymentCallbackRequest struct {
+	Object PaymentObject `json:"object"` // Основной объект данных
+}
+
+// PaymentObject описывает объект `object`, содержащий статус и метаданные.
+type PaymentObject struct {
+	Status   string          `json:"status" example:"succeeded"` // Статус оплаты
+	Metadata PaymentMetadata `json:"metadata"`                   // Метаданные оплаты
+}
+
+// PaymentMetadata описывает объект `metadata` с деталями бронирования.
+type PaymentMetadata struct {
+	BookingID string `json:"booking_id" example:"1"` // Уникальный идентификатор бронирования
 }

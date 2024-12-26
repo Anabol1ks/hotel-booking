@@ -68,6 +68,31 @@ definitions:
     - price
     - room_type
     type: object
+  payments.PaymentCallbackRequest:
+    properties:
+      object:
+        allOf:
+        - $ref: '#/definitions/payments.PaymentObject'
+        description: Основной объект данных
+    type: object
+  payments.PaymentMetadata:
+    properties:
+      booking_id:
+        description: Уникальный идентификатор бронирования
+        example: "1"
+        type: string
+    type: object
+  payments.PaymentObject:
+    properties:
+      metadata:
+        allOf:
+        - $ref: '#/definitions/payments.PaymentMetadata'
+        description: Метаданные оплаты
+      status:
+        description: Статус оплаты
+        example: succeeded
+        type: string
+    type: object
   response.BookingResponse:
     properties:
       end_date:
@@ -84,6 +109,13 @@ definitions:
         type: number
       user_id:
         type: integer
+    type: object
+  response.CreatePaymentResponse:
+    properties:
+      payment_url:
+        description: Ссылка для оплаты
+        example: ссылка на оплату
+        type: string
     type: object
   response.ErrorResponse:
     description: Стандартный ответ при ошибке
@@ -343,6 +375,42 @@ paths:
       summary: Бронирование номера
       tags:
       - bookings
+  /bookings/{id}/pay:
+    post:
+      consumes:
+      - application/json
+      description: Создает платеж через YooKassa для указанного бронирования и возвращает
+        ссылку для оплаты.
+      parameters:
+      - description: Идентификатор бронирования
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Ссылка для оплаты успешно создана
+          schema:
+            $ref: '#/definitions/response.CreatePaymentResponse'
+        "400":
+          description: Некорректный запрос или бронирование уже оплачено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Бронирование не найдено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера или ошибка платежной системы
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание платежа для бронирования
+      tags:
+      - payments
   /hotels:
     get:
       description: Возвращает список всех отелей, включая связанные номера.
@@ -488,6 +556,41 @@ paths:
       summary: Создание нового номера
       tags:
       - rooms
+  /payments/callback:
+    post:
+      consumes:
+      - application/json
+      description: Обрабатывает уведомления от платежной системы и обновляет статус
+        оплаты для указанного бронирования.
+      parameters:
+      - description: Данные вебхука от платежной системы
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/payments.PaymentCallbackRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Статус оплаты обновлен
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Некорректные данные запроса
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Бронирование не найдено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Webhook для обработки статуса оплаты
+      tags:
+      - payments
   /rooms:
     get:
       description: Возвращает отфильтрованный список номеров с возможностью фильтрации
