@@ -138,6 +138,11 @@ definitions:
           $ref: '#/definitions/response.RoomResponse'
         type: array
     type: object
+  response.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
   response.RoomResponse:
     properties:
       amenities:
@@ -430,6 +435,85 @@ paths:
       summary: Получение списка отелей
       tags:
       - hotels
+  /owners/{id}/room:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет существующий номер. Доступно только для владельцев.
+      parameters:
+      - description: ID номера
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Номер успешно удален
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "403":
+          description: Доступ запрещен или номер не принадлежит владельцу
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при удалении номера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление номера
+      tags:
+      - rooms
+    put:
+      consumes:
+      - application/json
+      description: Изменяет существующий номер. Доступно только для владельцев.
+      parameters:
+      - description: ID номера
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные номера
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/hotels.CreateRoomInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Номер успешно обновлен
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Доступ запрещен или номер не принадлежит владельцу
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при обновлении номера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Изменение номера
+      tags:
+      - rooms
   /owners/bookings:
     get:
       description: Получение бронирований для владельца

@@ -18,6 +18,10 @@ type TokenResponse struct {
 	Token string `json:"token" example:"Ваш токен"`
 }
 
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
 type UserResponse struct {
 	ID    uint   `json:"ID"`
 	Name  string `json:"Name"`

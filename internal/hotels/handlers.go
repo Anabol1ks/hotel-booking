@@ -195,3 +195,112 @@ func GetOwnerHotelsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, hotels)
 }
+
+// @Security BearerAuth
+// ChangeRoomHandler godoc
+// @Summary Изменение номера
+// @Description Изменяет существующий номер. Доступно только для владельцев.
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "ID номера"
+// @Param input body CreateRoomInput true "Данные номера"
+// @Success 200 {object} response.MessageResponse "Номер успешно обновлен"
+// @Failure 400 {object} response.ErrorResponse "Ошибка валидации"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен или номер не принадлежит владельцу"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при обновлении номера"
+// @Router /owners/{id}/room [put]
+func ChangeRoomHandler(c *gin.Context) {
+	roomID := c.Param("id")
+	ownerID := c.GetUint("user_id")
+	role := c.GetString("role")
+
+	if role != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	var room CreateRoomInput
+	if err := c.ShouldBindJSON(&room); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existingRoom Room
+	if err := storage.DB.First(&existingRoom, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	var hotel Hotel
+	if err := storage.DB.First(&hotel, existingRoom.HotelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Отель не найден"})
+		return
+	}
+
+	if hotel.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Номер не принадлежит вам"})
+		return
+	}
+
+	if storage.DB.Model(&existingRoom).Updates(Room{
+		RoomType:  room.RoomType,
+		Price:     room.Price,
+		Amenities: room.Amenities,
+		Capacity:  room.Capacity,
+	}).Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении номера"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Номер успешно обновлен"})
+}
+
+// @Security BearerAuth
+// DeleteRoomHandler godoc
+// @Summary Удаление номера
+// @Description Удаляет существующий номер. Доступно только для владельцев.
+// @Tags rooms
+// @Accept json
+// @Produce json
+// @Param id path int true "ID номера"
+// @Success 200 {object} response.MessageResponse "Номер успешно удален"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен или номер не принадлежит владельцу"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при удалении номера"
+// @Router /owners/{id}/room [delete]
+func DeleteRoomHandler(c *gin.Context) {
+	roomID := c.Param("id")
+	ownerID := c.GetUint("user_id")
+	role := c.GetString("role")
+
+	if role != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	var existingRoom Room
+	if err := storage.DB.First(&existingRoom, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	var hotel Hotel
+	if err := storage.DB.First(&hotel, existingRoom.HotelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Отель не найден"})
+		return
+	}
+
+	if hotel.OwnerID != ownerID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Номер не принадлежит вам"})
+		return
+	}
+
+	if err := storage.DB.Delete(&existingRoom).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении номера"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Номер успешно удален"})
+}

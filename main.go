@@ -66,6 +66,8 @@ func main() {
 	owners.POST("/rooms", hotels.CreateRoomHandler)
 	owners.GET("/hotels", hotels.GetOwnerHotelsHandler)
 	owners.GET("/bookings", bookings.GetOwnerBookingsHandler)
+	owners.PUT("/:id/room", hotels.ChangeRoomHandler)
+	owners.DELETE("/:id/room", hotels.DeleteRoomHandler)
 
 	admins := authorized.Group("/admin")
 	admins.GET("/users", users.GetUsersHandler)

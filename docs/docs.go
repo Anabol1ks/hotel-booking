@@ -568,6 +568,129 @@ const docTemplate = `{
                 }
             }
         },
+        "/owners/{id}/room": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Изменяет существующий номер. Доступно только для владельцев.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Изменение номера",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID номера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные номера",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hotels.CreateRoomInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Номер успешно обновлен",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен или номер не принадлежит владельцу",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Номер не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при обновлении номера",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет существующий номер. Доступно только для владельцев.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rooms"
+                ],
+                "summary": "Удаление номера",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID номера",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Номер успешно удален",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен или номер не принадлежит владельцу",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Номер не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при удалении номера",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/payments/callback": {
             "post": {
                 "description": "Обрабатывает уведомления от платежной системы и обновляет статус оплаты для указанного бронирования.",
@@ -915,6 +1038,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/response.RoomResponse"
                     }
+                }
+            }
+        },
+        "response.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
                 }
             }
         },
