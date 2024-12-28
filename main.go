@@ -4,6 +4,7 @@ import (
 	_ "hotel-booking/docs"
 	"hotel-booking/internal/auth"
 	"hotel-booking/internal/bookings"
+	"hotel-booking/internal/email"
 	"hotel-booking/internal/hotels"
 	"hotel-booking/internal/payments"
 	"hotel-booking/internal/storage"
@@ -52,6 +53,8 @@ func main() {
 	r.GET("/hotels", hotels.GetHotelsHandler)
 	r.GET("/rooms", hotels.GetRoomsHandler)
 	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
+
+	r.GET("/email/test", email.SendTestEmailHandler)
 
 	authorized := r.Group("/")
 	{
