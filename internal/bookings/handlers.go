@@ -133,3 +133,30 @@ func GetOwnerBookingsHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, bookings)
 }
+
+func CancelBookingHandler(c *gin.Context) {
+	bookingID := c.Param("id")
+	userID := c.GetUint("user_id")
+
+	var booking Booking
+	if err := storage.DB.First(&booking, bookingID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Бронирование не найдено"})
+		return
+	}
+	if booking.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Вы не можете отменить бронирование, которое не принадлежит вам"})
+		return
+	}
+
+	if booking.PaymentStatus == "succeeded" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Бронирование уже оплачено и не может быть отменено"})
+		return
+	}
+
+	if err := storage.DB.Delete(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при отмене бронирования"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Бронирование успешно отменено"})
+}

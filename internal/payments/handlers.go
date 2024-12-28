@@ -102,6 +102,18 @@ func CreatePaymentHandler(c *gin.Context) {
 		return
 	}
 
+	paymentID, ok := responseData["id"].(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось получить PaymentID"})
+		return
+	}
+
+	booking.PaymentID = paymentID // Сохраняем PaymentID
+	if err := storage.DB.Save(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении данных бронирования"})
+		return
+	}
+
 	// Проверка наличия confirmation_url
 	confirmation, ok := responseData["confirmation"].(map[string]interface{})
 	if !ok {
@@ -153,6 +165,19 @@ func PaymentCallbackHandler(c *gin.Context) {
 		return
 	}
 
+	paymentID, ok := object["id"].(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный формат поля 'id'"})
+		return
+	}
+
+	// Обновляем статус бронирования по PaymentID
+	var booking bookings.Booking
+	if err := storage.DB.Where("payment_id = ?", paymentID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Бронирование не найдено"})
+		return
+	}
+
 	// Проверяем наличие и формат metadata
 	metadata, ok := object["metadata"].(map[string]interface{})
 	if !ok || len(metadata) == 0 {
@@ -171,7 +196,6 @@ func PaymentCallbackHandler(c *gin.Context) {
 	bookingID := fmt.Sprintf("%v", bookingIDRaw)
 
 	// Проверяем существование бронирования
-	var booking bookings.Booking
 	if err := storage.DB.First(&booking, bookingID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Бронирование не найдено"})
 		return
@@ -200,4 +224,94 @@ type PaymentObject struct {
 // PaymentMetadata описывает объект `metadata` с деталями бронирования.
 type PaymentMetadata struct {
 	BookingID string `json:"booking_id" example:"1"` // Уникальный идентификатор бронирования
+}
+
+// RefundPaymentHandler обрабатывает запрос на возврат платежа.
+func RefundPaymentHandler(c *gin.Context) {
+	bookingID := c.Param("id")
+	userID := c.GetUint("user_id")
+
+	// Находим бронирование
+	var booking bookings.Booking
+	if err := storage.DB.First(&booking, bookingID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Бронирование не найдено"})
+		return
+	}
+
+	// Проверяем права доступа пользователя
+	if booking.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "У вас нет прав на отмену этого бронирования"})
+		return
+	}
+
+	// Проверяем статус оплаты
+	if booking.PaymentStatus != "succeeded" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Бронирование не оплачено"})
+		return
+	}
+
+	// Проверяем наличие payment_id (должен быть сохранен при создании платежа)
+	if booking.PaymentID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID платежа отсутствует для данного бронирования"})
+		return
+	}
+
+	// Формируем запрос на возврат
+	refundRequest := map[string]interface{}{
+		"payment_id": booking.PaymentID,
+		"amount": map[string]interface{}{
+			"value":    fmt.Sprintf("%.2f", booking.TotalCost),
+			"currency": "RUB",
+		},
+	}
+
+	// Конвертируем запрос в JSON
+	refundBody, err := json.Marshal(refundRequest)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании запроса на возврат"})
+		return
+	}
+
+	// Отправляем запрос на возврат
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", "https://api.yookassa.ru/v3/refunds", bytes.NewBuffer(refundBody))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании запроса на возврат"})
+		return
+	}
+
+	req.SetBasicAuth(os.Getenv("YOKASSA_SHOP_ID"), os.Getenv("YOKASSA_SECRET_KEY"))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Добавляем уникальный Idempotence-Key
+	idempotenceKey := uuid.New().String()
+	req.Header.Set("Idempotence-Key", idempotenceKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при подключении к API YooKassa"})
+		return
+	}
+	defer resp.Body.Close()
+
+	// Обрабатываем ответ от API
+	var responseData map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&responseData); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обработке ответа от API YooKassa"})
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		c.JSON(resp.StatusCode, responseData)
+		return
+	}
+
+	// Обновляем статус бронирования
+	booking.PaymentStatus = "refunded"
+	if err := storage.DB.Save(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении статуса бронирования"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Оплата отменена"})
 }

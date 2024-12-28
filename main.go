@@ -49,29 +49,35 @@ func main() {
 	r.POST("/auth/register", auth.RegisterHandler)
 	r.POST("/auth/login", auth.LoginHandler)
 
-	authorized := r.Group("/")
-	authorized.Use(auth.AuthMiddleware())
-
-	authorized.POST("/bookings", bookings.CreateBookingHandler)
-
 	r.GET("/hotels", hotels.GetHotelsHandler)
 	r.GET("/rooms", hotels.GetRoomsHandler)
 	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
 
-	authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
+	authorized := r.Group("/")
+	{
+		authorized.Use(auth.AuthMiddleware())
+		authorized.POST("/bookings", bookings.CreateBookingHandler)
+		authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
+		authorized.DELETE("/bookings/:id", bookings.CancelBookingHandler)
+		authorized.POST("/bookings/:id/refund", payments.RefundPaymentHandler)
+	}
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 
 	owners := authorized.Group("/owners")
-	owners.POST("/hotels", hotels.CreateHotelHandler)
-	owners.POST("/rooms", hotels.CreateRoomHandler)
-	owners.GET("/hotels", hotels.GetOwnerHotelsHandler)
-	owners.GET("/bookings", bookings.GetOwnerBookingsHandler)
-	owners.PUT("/:id/room", hotels.ChangeRoomHandler)
-	owners.DELETE("/:id/room", hotels.DeleteRoomHandler)
+	{
+		owners.POST("/hotels", hotels.CreateHotelHandler)
+		owners.POST("/rooms", hotels.CreateRoomHandler)
+		owners.GET("/hotels", hotels.GetOwnerHotelsHandler)
+		owners.GET("/bookings", bookings.GetOwnerBookingsHandler)
+		owners.PUT("/:id/room", hotels.ChangeRoomHandler)
+		owners.DELETE("/:id/room", hotels.DeleteRoomHandler)
+	}
 
 	admins := authorized.Group("/admin")
-	admins.GET("/users", users.GetUsersHandler)
-	admins.PUT("/users/:id/role", users.UpdateRoleHandler)
+	{
+		admins.GET("/users", users.GetUsersHandler)
+		admins.PUT("/users/:id/role", users.UpdateRoleHandler)
+	}
 
 	if err := r.Run(":8080"); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
