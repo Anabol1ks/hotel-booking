@@ -167,8 +167,88 @@ func ResetPasswordRequestHandler(c *gin.Context) {
 	}
 
 	resetLink := fmt.Sprintf("http://localhost:8080/auth/reset-password?token=%s", resetToken)
+	emailTemplate := `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сброс пароля</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .email-header {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .email-body {
+            padding: 20px;
+            color: #333333;
+        }
+        .email-body p {
+            margin: 0 0 15px;
+            line-height: 1.5;
+        }
+        .email-footer {
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #777;
+        }
+        .reset-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .reset-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Сброс пароля</h1>
+        </div>
+        <div class="email-body">
+            <p>Здравствуйте,</p>
+            <p>Вы запросили сброс пароля для вашей учетной записи. Чтобы продолжить, нажмите на кнопку ниже:</p>
+            <a href="%s" class="reset-button">Сбросить пароль</a>
+            <p>Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>
+            <p>С уважением,<br>Команда поддержки</p>
+        </div>
+        <div class="email-footer">
+            Это письмо было отправлено автоматически. Пожалуйста, не отвечайте на него.
+        </div>
+    </div>
+</body>
+</html>`
+
 	subject := "Восстановление пароля"
-	body := fmt.Sprintf("Для восстановления пароля перейдите по ссылке: %s\n Ссылка действует 10 минут!", resetLink)
+	body := fmt.Sprintf(emailTemplate, resetLink)
 	if err := email.SendEmail(user.Email, subject, body); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при отправке письма"})
 		return

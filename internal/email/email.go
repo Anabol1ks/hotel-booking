@@ -12,7 +12,10 @@ func SendEmail(to, subject, body string) error {
 	fromEmail := os.Getenv("SMTP_EMAIL")
 	password := os.Getenv("SMTP_PASSWORD")
 
-	message := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s", fromEmail, to, subject, body)
+	message := fmt.Sprintf(
+		"From: %s\r\nTo: %s\r\nSubject: %s\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n%s",
+		fromEmail, to, subject, body,
+	)
 
 	auth := smtp.PlainAuth("", fromEmail, password, smtpHost)
 
