@@ -1,6 +1,10 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"hotel-booking/internal/email"
 	"hotel-booking/internal/storage"
 	"hotel-booking/internal/users"
 	"net/http"
@@ -124,4 +128,92 @@ func GenerateJWT(userID uint, role string) string {
 	})
 	tokenString, _ := token.SignedString(jwtSecret)
 	return tokenString
+}
+
+type ResetPasswordRequestInput struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+func ResetPasswordRequestHandler(c *gin.Context) {
+	var input ResetPasswordRequestInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user users.User
+	if err := storage.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+
+	token := make([]byte, 32)
+	_, err := rand.Read(token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка генерации токена"})
+		return
+	}
+
+	resetToken := hex.EncodeToString(token)
+	expiration := time.Now().Add(10 * time.Minute)
+
+	user.ResetPasswordToken = resetToken
+	user.ResetTokenExpiry = &expiration
+
+	if err := storage.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении токена"})
+		return
+	}
+
+	resetLink := fmt.Sprintf("http://localhost:8080/auth/reset-password?token=%s", resetToken)
+	subject := "Восстановление пароля"
+	body := fmt.Sprintf("Для восстановления пароля перейдите по ссылке: %s\n Ссылка действует 10 минут!", resetLink)
+	if err := email.SendEmail(user.Email, subject, body); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при отправке письма"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Письмо с инструкцией отправлено"})
+}
+
+type ResetPasswordInput struct {
+	Token    string `json:"token" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+func ResetPasswordHandler(c *gin.Context) {
+	var input ResetPasswordInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user users.User
+	if err := storage.DB.Where("reset_password_token = ?", input.Token).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Неверный токен"})
+		return
+	}
+
+	if user.ResetTokenExpiry == nil || user.ResetTokenExpiry.Before(time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Срок действия токена истек"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось хешировать пароль"})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+	user.ResetPasswordToken = ""
+	user.ResetTokenExpiry = nil
+
+	if err := storage.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении пароля"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Пароль успешно изменен"})
 }

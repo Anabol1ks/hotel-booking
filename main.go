@@ -55,6 +55,8 @@ func main() {
 	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
 
 	r.GET("/email/test", email.SendTestEmailHandler)
+	r.POST("/auth/reset-password-request", auth.ResetPasswordRequestHandler)
+	r.POST("/auth/reset-password", auth.ResetPasswordHandler)
 
 	authorized := r.Group("/")
 	{
