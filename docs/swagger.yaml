@@ -25,6 +25,23 @@ definitions:
     - password
     - phone
     type: object
+  auth.ResetPasswordInput:
+    properties:
+      password:
+        type: string
+      token:
+        type: string
+    required:
+    - password
+    - token
+    type: object
+  auth.ResetPasswordRequestInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   bookings.CreateBookingInput:
     properties:
       end_date:
@@ -342,6 +359,83 @@ paths:
       summary: Регистрация пользователя
       tags:
       - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Обрабатывает запрос на сброс пароля пользователя с использованием
+        токена
+      parameters:
+      - description: Данные для сброса пароля
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ResetPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Сообщение об успешном сбросе пароля
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Ошибка валидации или истекший токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Неверный токен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Сброс пароля
+      tags:
+      - auth
+  /auth/reset-password-request:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет письмо со ссылкой для сброса пароля на указанный email
+      parameters:
+      - description: Email пользователя
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ResetPasswordRequestInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Письмо с инструкцией отправлено
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Запрос на сброс пароля
+      tags:
+      - auth
   /bookings:
     post:
       description: Бронирование номера только для авторизованных пользователей
@@ -380,6 +474,44 @@ paths:
       summary: Бронирование номера
       tags:
       - bookings
+  /bookings/{id}:
+    delete:
+      description: Отмена бронирования пользователем
+      parameters:
+      - description: ID бронирования
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Бронирование успешно отменено
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Бронирование уже оплачено и не может быть отменено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Вы не можете отменить бронирование, которое не принадлежит
+            вам
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Бронирование не найдено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при отмене бронирования
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Отмена бронирования
+      tags:
+      - bookings
   /bookings/{id}/pay:
     post:
       consumes:
@@ -416,6 +548,75 @@ paths:
       summary: Создание платежа для бронирования
       tags:
       - payments
+  /bookings/{id}/refund:
+    post:
+      consumes:
+      - application/json
+      description: Обрабатывает запрос на возврат платежа за бронирование. Проверяет
+        права доступа пользователя, статус оплаты и выполняет возврат через API YooKassa.
+      parameters:
+      - description: ID бронирования
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Оплата отменена
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Бронирование не оплачено или ID платежа отсутствует
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: У вас нет прав на отмену этого бронирования
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Бронирование не найдено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Обработка возврата платежа
+      tags:
+      - payments
+  /email/test:
+    get:
+      consumes:
+      - application/json
+      description: Отправляет тестовое письмо на указанную почту.
+      parameters:
+      - description: Email получателя
+        in: query
+        name: to
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Тестовое письмо успешно отправлено
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Не указан email получателя
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка отправки письма
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Отправка тестового письма
+      tags:
+      - email
   /hotels:
     get:
       description: Возвращает список всех отелей, включая связанные номера.

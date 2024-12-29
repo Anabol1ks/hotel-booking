@@ -134,6 +134,19 @@ func GetOwnerBookingsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, bookings)
 }
 
+// @Security BearerAuth
+// CancelBookingHandler godoc
+// @Summary Отмена бронирования
+// @Description Отмена бронирования пользователем
+// @Tags bookings
+// @Param id path int true "ID бронирования"
+// @Produce json
+// @Success 200 {object} response.MessageResponse "Бронирование успешно отменено"
+// @Failure 400 {object} response.ErrorResponse "Бронирование уже оплачено и не может быть отменено"
+// @Failure 403 {object} response.ErrorResponse "Вы не можете отменить бронирование, которое не принадлежит вам"
+// @Failure 404 {object} response.ErrorResponse "Бронирование не найдено"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при отмене бронирования"
+// @Router /bookings/{id} [delete]
 func CancelBookingHandler(c *gin.Context) {
 	bookingID := c.Param("id")
 	userID := c.GetUint("user_id")
@@ -159,4 +172,5 @@ func CancelBookingHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Бронирование успешно отменено"})
+
 }

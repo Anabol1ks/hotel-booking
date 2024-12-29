@@ -227,6 +227,19 @@ type PaymentMetadata struct {
 }
 
 // RefundPaymentHandler обрабатывает запрос на возврат платежа.
+// @Summary Обработка возврата платежа
+// @Description Обрабатывает запрос на возврат платежа за бронирование. Проверяет права доступа пользователя, статус оплаты и выполняет возврат через API YooKassa.
+// @Tags payments
+// @Accept json
+// @Produce json
+// @Param id path string true "ID бронирования"
+// @Security ApiKeyAuth
+// @Success 200 {object} response.MessageResponse "Оплата отменена"
+// @Failure 400 {object} response.ErrorResponse "Бронирование не оплачено или ID платежа отсутствует"
+// @Failure 403 {object} response.ErrorResponse "У вас нет прав на отмену этого бронирования"
+// @Failure 404 {object} response.ErrorResponse "Бронирование не найдено"
+// @Failure 500 {object} response.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /bookings/{id}/refund [post]
 func RefundPaymentHandler(c *gin.Context) {
 	bookingID := c.Param("id")
 	userID := c.GetUint("user_id")

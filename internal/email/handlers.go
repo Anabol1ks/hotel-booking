@@ -6,6 +6,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @Summary Отправка тестового письма
+// @Description Отправляет тестовое письмо на указанную почту.
+// @Tags email
+// @Accept json
+// @Produce json
+// @Param to query string true "Email получателя"
+// @Success 200 {object} response.SuccessResponse "Тестовое письмо успешно отправлено"
+// @Failure 400 {object} response.ErrorResponse "Не указан email получателя"
+// @Failure 500 {object} response.ErrorResponse "Ошибка отправки письма"
+// @Router /email/test [get]
 func SendTestEmailHandler(c *gin.Context) {
 	to := c.Query("to")
 	if to == "" {

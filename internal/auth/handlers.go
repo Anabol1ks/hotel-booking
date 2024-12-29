@@ -134,6 +134,18 @@ type ResetPasswordRequestInput struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
+// ResetPasswordRequestHandler godoc
+// @Summary Запрос на сброс пароля
+// @Description Отправляет письмо со ссылкой для сброса пароля на указанный email
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body ResetPasswordRequestInput true "Email пользователя"
+// @Success 200 {object} response.MessageResponse "Письмо с инструкцией отправлено"
+// @Failure 400 {object} response.ErrorResponse "Ошибка валидации"
+// @Failure 404 {object} response.ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} response.ErrorResponse "Внутренняя ошибка сервера"
+// @Router /auth/reset-password-request [post]
 func ResetPasswordRequestHandler(c *gin.Context) {
 	var input ResetPasswordRequestInput
 
@@ -255,6 +267,7 @@ func ResetPasswordRequestHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Письмо с инструкцией отправлено"})
+
 }
 
 type ResetPasswordInput struct {
@@ -262,6 +275,17 @@ type ResetPasswordInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// @Summary Сброс пароля
+// @Description Обрабатывает запрос на сброс пароля пользователя с использованием токена
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body ResetPasswordInput true "Данные для сброса пароля"
+// @Success 200 {object} map[string]string "Сообщение об успешном сбросе пароля"
+// @Failure 400 {object} map[string]string "Ошибка валидации или истекший токен"
+// @Failure 404 {object} map[string]string "Неверный токен"
+// @Failure 500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Router /auth/reset-password [post]
 func ResetPasswordHandler(c *gin.Context) {
 	var input ResetPasswordInput
 	if err := c.ShouldBindJSON(&input); err != nil {
