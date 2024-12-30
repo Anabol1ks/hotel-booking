@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Cookies from 'js-cookie'
 
 const Login = () => {
 	const navigate = useNavigate()
@@ -31,8 +32,8 @@ const Login = () => {
 
 			if (response.ok) {
 				// Сохраняем токен в локальное хранилище
-				localStorage.setItem('token', data.token)
-				localStorage.setItem('role', data.role)
+				Cookies.set('token', data.token)
+				Cookies.set('role', data.role)
 				navigate('/') // Перенаправление на главную страницу
 			} else {
 				setError(data.error || 'Ошибка авторизации')

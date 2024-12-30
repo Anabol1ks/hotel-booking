@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie'
 
 const UpdateUserRole = () => {
 	const location = useLocation(); // Получение переданных данных через state
@@ -22,7 +23,7 @@ const UpdateUserRole = () => {
 		setSuccess('');
 
 		try {
-			const token = localStorage.getItem('token');
+			const token = Cookies.get('token')
 
 			const response = await fetch(
 				`http://localhost:8080/admin/users/${user.ID}/role`,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie'
 
 const AdminUsers = () => {
 	const [users, setUsers] = useState([]);
@@ -9,7 +10,7 @@ const AdminUsers = () => {
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const token = localStorage.getItem('token'); // Получаем токен из localStorage
+				const token = Cookies.get('token'); 
 				if (!token) {
 					setError('Необходима авторизация');
 					return;

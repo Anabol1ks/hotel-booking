@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Cookies from 'js-cookie'
 
 const Home = () => {
 	const [role, setRole] = useState(null)
@@ -7,15 +8,15 @@ const Home = () => {
 
 	useEffect(() => {
 		// Получаем роль из localStorage
-		const storedRole = localStorage.getItem('role')
+		const storedRole = Cookies.get('role')
 		if (storedRole) {
 			setRole(storedRole)
 		}
 	}, [])
 
 	const handleLogout = () => {
-		localStorage.removeItem('token')
-		localStorage.removeItem('role')
+		Cookies.remove('token')
+		Cookies.remove('role')
 		navigate('auth/login')
 	}
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import Cookies from 'js-cookie'
 
 const ResetPassword = () => {
 	const [password, setPassword] = useState('')
@@ -46,7 +47,7 @@ const ResetPassword = () => {
 				setSuccess('Пароль успешно изменён.')
 
 				// Проверка наличия токена авторизации
-				const authToken = localStorage.getItem('token')
+				const authToken = Cookies.get('token')
 				setTimeout(() => {
 					if (authToken) {
 						navigate('/') // Перенаправление на аккаунт
