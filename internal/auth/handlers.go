@@ -117,7 +117,8 @@ func LoginHandler(c *gin.Context) {
 
 	// Генерируем JWT
 	token := GenerateJWT(user.ID, user.Role)
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	role := user.Role
+	c.JSON(http.StatusOK, gin.H{"token": token, "role": role})
 }
 
 func GenerateJWT(userID uint, role string) string {

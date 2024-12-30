@@ -12,6 +12,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gin-contrib/cors"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -44,6 +45,14 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // Укажи адрес фронтенда React
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Authorization", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

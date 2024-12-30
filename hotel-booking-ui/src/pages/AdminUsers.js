@@ -1,0 +1,85 @@
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+const AdminUsers = () => {
+	const [users, setUsers] = useState([])
+	const [error, setError] = useState('')
+  const navigate = useNavigate()
+  
+
+	useEffect(() => {
+		const fetchUsers = async () => {
+			try {
+				const token = localStorage.getItem('token') // Получаем токен из localStorage
+				if (!token) {
+					setError('Необходима авторизация')
+					return
+				}
+
+				const response = await fetch('http://localhost:8080/admin/users', {
+					method: 'GET',
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				})
+
+				if (response.ok) {
+					const data = await response.json()
+					setUsers(data)
+				} else if (response.status === 403) {
+					setError(
+						'Доступ запрещён: Только администратор может просматривать пользователей.'
+					)
+				} else {
+					setError('Произошла ошибка при получении данных пользователей.')
+				}
+			} catch (err) {
+				setError('Не удалось подключиться к серверу.')
+			}
+		}
+
+		fetchUsers()
+	}, [])
+
+	return (
+		<div>
+			<h1>Панель администратора - Список пользователей</h1>
+			{error && <p style={{ color: 'red' }}>{error}</p>}
+			{!error && (
+				<table border='1' cellPadding='10'>
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Имя</th>
+							<th>Email</th>
+							<th>Телефон</th>
+							<th>Роль</th>
+						</tr>
+					</thead>
+					<tbody>
+						{users.map(user => (
+							<tr key={user.ID}>
+								<td>{user.ID}</td>
+								<td>{user.Name}</td>
+								<td>{user.Email}</td>
+								<td>{user.Phone}</td>
+								<td>{user.Role}</td>
+								<td>
+									<button
+										onClick={() => navigate(`/admin/users/${user.id}/role`)}
+									>
+										Изменить роль
+									</button>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+		</div>
+	)
+
+  
+}
+
+export default AdminUsers
