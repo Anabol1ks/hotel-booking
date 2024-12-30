@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminUsers = () => {
-	const [users, setUsers] = useState([])
-	const [error, setError] = useState('')
-  const navigate = useNavigate()
-  
+	const [users, setUsers] = useState([]);
+	const [error, setError] = useState('');
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const token = localStorage.getItem('token') // Получаем токен из localStorage
+				const token = localStorage.getItem('token'); // Получаем токен из localStorage
 				if (!token) {
-					setError('Необходима авторизация')
-					return
+					setError('Необходима авторизация');
+					return;
 				}
 
 				const response = await fetch('http://localhost:8080/admin/users', {
@@ -21,32 +20,32 @@ const AdminUsers = () => {
 					headers: {
 						Authorization: `Bearer ${token}`,
 					},
-				})
+				});
 
 				if (response.ok) {
-					const data = await response.json()
-					setUsers(data)
+					const data = await response.json();
+					setUsers(data);
 				} else if (response.status === 403) {
 					setError(
 						'Доступ запрещён: Только администратор может просматривать пользователей.'
-					)
+					);
 				} else {
-					setError('Произошла ошибка при получении данных пользователей.')
+					setError('Произошла ошибка при получении данных пользователей.');
 				}
 			} catch (err) {
-				setError('Не удалось подключиться к серверу.')
+				setError('Не удалось подключиться к серверу.');
 			}
-		}
+		};
 
-		fetchUsers()
-	}, [])
+		fetchUsers();
+	}, []);
 
 	return (
 		<div>
 			<h1>Панель администратора - Список пользователей</h1>
 			{error && <p style={{ color: 'red' }}>{error}</p>}
-			{!error && (
-				<table border='1' cellPadding='10'>
+			{!error && users.length > 0 && (
+				<table border="1" cellPadding="10" cellSpacing="0">
 					<thead>
 						<tr>
 							<th>ID</th>
@@ -54,11 +53,12 @@ const AdminUsers = () => {
 							<th>Email</th>
 							<th>Телефон</th>
 							<th>Роль</th>
+							<th>Действия</th>
 						</tr>
 					</thead>
 					<tbody>
-						{users.map(user => (
-							<tr key={user.ID}>
+						{users.map((user) => (
+							<tr key={user.id}>
 								<td>{user.ID}</td>
 								<td>{user.Name}</td>
 								<td>{user.Email}</td>
@@ -66,7 +66,11 @@ const AdminUsers = () => {
 								<td>{user.Role}</td>
 								<td>
 									<button
-										onClick={() => navigate(`/admin/users/${user.id}/role`)}
+										onClick={() =>
+											navigate(`/admin/users/${user.ID}/role`, {
+												state: { user },
+											})
+										}
 									>
 										Изменить роль
 									</button>
@@ -76,10 +80,9 @@ const AdminUsers = () => {
 					</tbody>
 				</table>
 			)}
+			{!error && users.length === 0 && <p>Список пользователей пуст.</p>}
 		</div>
-	)
+	);
+};
 
-  
-}
-
-export default AdminUsers
+export default AdminUsers;

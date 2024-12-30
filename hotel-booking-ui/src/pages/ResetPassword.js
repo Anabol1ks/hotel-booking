@@ -1,30 +1,34 @@
 import React, { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 const ResetPassword = () => {
-	const location = useLocation()
-	const history = useNavigate()
-
 	const [password, setPassword] = useState('')
+	const [confirmPassword, setConfirmPassword] = useState('')
 	const [error, setError] = useState('')
+	const [success, setSuccess] = useState('')
+	const [loading, setLoading] = useState(false)
+	const navigate = useNavigate()
+	const [searchParams] = useSearchParams()
 
-	// Функция для извлечения параметров URL
-	const getQueryParam = name => {
-		const urlParams = new URLSearchParams(location.search)
-		return urlParams.get(name)
-	}
-
-	const token = getQueryParam('token')
+	const token = searchParams.get('token')
 
 	const handleSubmit = async e => {
 		e.preventDefault()
+		setError('')
+		setSuccess('')
+		setLoading(true)
 
-		if (!password) {
-			setError('Password is required')
+		if (!token) {
+			setError('Токен для сброса пароля не найден.')
+			setLoading(false)
 			return
 		}
 
-		const body = { token, password }
+		if (password !== confirmPassword) {
+			setError('Пароли не совпадают.')
+			setLoading(false)
+			return
+		}
 
 		try {
 			const response = await fetch(
@@ -34,31 +38,42 @@ const ResetPassword = () => {
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify(body),
+					body: JSON.stringify({ token, password }),
 				}
 			)
 
-			const data = await response.json() // Распарсим ответ
-
 			if (response.ok) {
-				// Успешный сброс пароля
-				history('/login')
+				setSuccess('Пароль успешно изменён.')
+
+				// Проверка наличия токена авторизации
+				const authToken = localStorage.getItem('token')
+				setTimeout(() => {
+					if (authToken) {
+						navigate('/') // Перенаправление на аккаунт
+					} else {
+						navigate('/auth/login') // Перенаправление на страницу входа
+					}
+				}, 2000) // Небольшая задержка для отображения сообщения успеха
 			} else {
-				// Установка ошибки с сервера
-				setError(data.error || 'Failed to reset password')
+				const data = await response.json()
+				setError(data.error || 'Ошибка при сбросе пароля.')
 			}
 		} catch (err) {
-			setError('Something went wrong')
+			setError('Произошла ошибка. Попробуйте ещё раз позже.')
+		} finally {
+			setLoading(false)
 		}
 	}
 
 	return (
 		<div>
-			<h2>Reset Password</h2>
+			<h2>Сброс пароля</h2>
+			<p>Введите новый пароль для вашей учётной записи.</p>
 			{error && <p style={{ color: 'red' }}>{error}</p>}
+			{success && <p style={{ color: 'green' }}>{success}</p>}
 			<form onSubmit={handleSubmit}>
 				<div>
-					<label>Password</label>
+					<label>Новый пароль</label>
 					<input
 						type='password'
 						value={password}
@@ -66,11 +81,21 @@ const ResetPassword = () => {
 						required
 					/>
 				</div>
-				<button type='submit'>Reset Password</button>
+				<div>
+					<label>Подтвердите пароль</label>
+					<input
+						type='password'
+						value={confirmPassword}
+						onChange={e => setConfirmPassword(e.target.value)}
+						required
+					/>
+				</div>
+				<button type='submit' disabled={loading}>
+					{loading ? 'Изменение...' : 'Сменить пароль'}
+				</button>
 			</form>
 		</div>
 	)
 }
 
-console.log('ResetPassword component loaded')
 export default ResetPassword

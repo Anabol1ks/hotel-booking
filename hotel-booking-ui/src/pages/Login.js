@@ -1,22 +1,22 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const Login = () => {
-	const history = useNavigate();
+	const navigate = useNavigate()
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
-	});
-	const [error, setError] = useState('');
+	})
+	const [error, setError] = useState('')
 
 	const handleChange = e => {
-		const { name, value } = e.target;
-		setFormData(prev => ({ ...prev, [name]: value }));
-	};
+		const { name, value } = e.target
+		setFormData(prev => ({ ...prev, [name]: value }))
+	}
 
 	const handleSubmit = async e => {
-		e.preventDefault();
-		setError('');
+		e.preventDefault()
+		setError('')
 
 		try {
 			const response = await fetch('http://localhost:8080/auth/login', {
@@ -25,22 +25,22 @@ const Login = () => {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify(formData),
-			});
+			})
 
-			const data = await response.json();
+			const data = await response.json()
 
 			if (response.ok) {
 				// Сохраняем токен в локальное хранилище
-				localStorage.setItem('token', data.token);
-				localStorage.setItem('role', data.role);
-				history('/'); // Перенаправление на главную страницу
+				localStorage.setItem('token', data.token)
+				localStorage.setItem('role', data.role)
+				navigate('/') // Перенаправление на главную страницу
 			} else {
-				setError(data.error || 'Ошибка авторизации');
+				setError(data.error || 'Ошибка авторизации')
 			}
 		} catch (err) {
-			setError('Что-то пошло не так. Попробуйте позже.');
+			setError('Что-то пошло не так. Попробуйте позже.')
 		}
-	};
+	}
 
 	return (
 		<div>
@@ -69,8 +69,23 @@ const Login = () => {
 				</div>
 				<button type='submit'>Войти</button>
 			</form>
+			<div style={{ marginTop: '10px' }}>
+				<button
+					type='button'
+					onClick={() => navigate('/auth/forgot-password')}
+					style={{
+						background: 'none',
+						border: 'none',
+						color: 'blue',
+						textDecoration: 'underline',
+						cursor: 'pointer',
+					}}
+				>
+					Забыли пароль?
+				</button>
+			</div>
 		</div>
-	);
-};
+	)
+}
 
-export default Login;
+export default Login

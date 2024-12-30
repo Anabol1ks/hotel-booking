@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Home from './pages/Home'
 import AdminUsers from './pages/AdminUsers'
 import UpdateUserRole from './pages/UpdateUserRole'
+import ForgotPassword from './pages/ForgotPassword'
 
 
 const App = () => {
@@ -16,8 +17,9 @@ const App = () => {
 				<Route path='/auth/register' element={<Register />} />
 				<Route path='/auth/login' element={<Login />} />
 				<Route path='/auth/reset-password' element={<ResetPassword />} />
+				<Route path='/auth/forgot-password' element={<ForgotPassword />} />
 				<Route path='/admin/users' element={<AdminUsers />} />
-				<Route path='/admin/users/:id/role' element={<UpdateUserRole/>} />
+				<Route path='/admin/users/:id/role' element={<UpdateUserRole />} />
 			</Routes>
 		</Router>
 	)
