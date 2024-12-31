@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import styles from './ForgotPassword.module.css'
 
 const ForgotPassword = () => {
 	const [email, setEmail] = useState('')
@@ -26,7 +27,7 @@ const ForgotPassword = () => {
 
 			if (response.ok) {
 				setSuccess('Письмо с инструкциями отправлено на ваш email.')
-				setEmail('') // Сброс email
+				setEmail('')
 			} else {
 				const data = await response.json()
 				setError(data.error || 'Ошибка при отправке письма.')
@@ -39,25 +40,30 @@ const ForgotPassword = () => {
 	}
 
 	return (
-		<div>
-			<h2>Восстановление пароля</h2>
-			<p>
+		<div className={styles.container}>
+			<h2 className={styles.title}>Восстановление пароля</h2>
+			<p className={styles.description}>
 				Введите свой email, и мы отправим вам письмо с инструкцией по сбросу
 				пароля.
 			</p>
-			{error && <p style={{ color: 'red' }}>{error}</p>}
-			{success && <p style={{ color: 'green' }}>{success}</p>}
+			{error && <p className={styles.error}>{error}</p>}
+			{success && <p className={styles.success}>{success}</p>}
 			<form onSubmit={handleSubmit}>
-				<div>
-					<label>Email</label>
+				<div className={styles.formGroup}>
+					<label className={styles.label}>Email</label>
 					<input
-						type='email'
+						className={styles.input}
+						type="email"
 						value={email}
 						onChange={e => setEmail(e.target.value)}
 						required
 					/>
 				</div>
-				<button type='submit' disabled={loading}>
+				<button 
+					className={styles.button} 
+					type="submit" 
+					disabled={loading}
+				>
 					{loading ? 'Отправка...' : 'Отправить'}
 				</button>
 			</form>

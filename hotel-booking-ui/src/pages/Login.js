@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
+import styles from './Login.module.css'
 
 const Login = () => {
 	const navigate = useNavigate()
@@ -31,10 +32,9 @@ const Login = () => {
 			const data = await response.json()
 
 			if (response.ok) {
-				// Сохраняем токен в локальное хранилище
 				Cookies.set('token', data.token)
 				Cookies.set('role', data.role)
-				navigate('/') // Перенаправление на главную страницу
+				navigate('/')
 			} else {
 				setError(data.error || 'Ошибка авторизации')
 			}
@@ -44,13 +44,14 @@ const Login = () => {
 	}
 
 	return (
-		<div>
-			<h2>Вход</h2>
-			{error && <p style={{ color: 'red' }}>{error}</p>}
+		<div className={styles.loginContainer}>
+			<h2 className={styles.title}>Вход</h2>
+			{error && <p className={styles.error}>{error}</p>}
 			<form onSubmit={handleSubmit}>
-				<div>
-					<label>Email</label>
+				<div className={styles.formGroup}>
+					<label className={styles.label}>Email</label>
 					<input
+						className={styles.input}
 						type='email'
 						name='email'
 						value={formData.email}
@@ -58,9 +59,10 @@ const Login = () => {
 						required
 					/>
 				</div>
-				<div>
-					<label>Пароль</label>
+				<div className={styles.formGroup}>
+					<label className={styles.label}>Пароль</label>
 					<input
+						className={styles.input}
 						type='password'
 						name='password'
 						value={formData.password}
@@ -68,19 +70,15 @@ const Login = () => {
 						required
 					/>
 				</div>
-				<button type='submit'>Войти</button>
+				<button className={styles.submitButton} type='submit'>
+					Войти
+				</button>
 			</form>
-			<div style={{ marginTop: '10px' }}>
+			<div className={styles.forgotPassword}>
 				<button
+					className={styles.forgotPasswordButton}
 					type='button'
 					onClick={() => navigate('/auth/forgot-password')}
-					style={{
-						background: 'none',
-						border: 'none',
-						color: 'blue',
-						textDecoration: 'underline',
-						cursor: 'pointer',
-					}}
 				>
 					Забыли пароль?
 				</button>

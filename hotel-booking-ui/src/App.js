@@ -7,6 +7,10 @@ import Home from './pages/Home'
 import AdminUsers from './pages/AdminUsers'
 import UpdateUserRole from './pages/UpdateUserRole'
 import ForgotPassword from './pages/ForgotPassword'
+import HotelsAndRooms from './pages/HotelsAndRooms'
+
+
+
 
 
 const App = () => {
@@ -20,6 +24,7 @@ const App = () => {
 				<Route path='/auth/forgot-password' element={<ForgotPassword />} />
 				<Route path='/admin/users' element={<AdminUsers />} />
 				<Route path='/admin/users/:id/role' element={<UpdateUserRole />} />
+				<Route path='/hotels-and-rooms' element={<HotelsAndRooms />} />
 			</Routes>
 		</Router>
 	)

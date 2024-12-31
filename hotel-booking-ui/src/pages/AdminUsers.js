@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie'
+import styles from './AdminUsers.module.css'
 
 const AdminUsers = () => {
 	const [users, setUsers] = useState([]);
@@ -10,7 +11,7 @@ const AdminUsers = () => {
 	useEffect(() => {
 		const fetchUsers = async () => {
 			try {
-				const token = Cookies.get('token'); 
+				const token = Cookies.get('token');
 				if (!token) {
 					setError('Необходима авторизация');
 					return;
@@ -27,9 +28,7 @@ const AdminUsers = () => {
 					const data = await response.json();
 					setUsers(data);
 				} else if (response.status === 403) {
-					setError(
-						'Доступ запрещён: Только администратор может просматривать пользователей.'
-					);
+					setError('Доступ запрещён: Только администратор может просматривать пользователей.');
 				} else {
 					setError('Произошла ошибка при получении данных пользователей.');
 				}
@@ -42,11 +41,13 @@ const AdminUsers = () => {
 	}, []);
 
 	return (
-		<div>
-			<h1>Панель администратора - Список пользователей</h1>
-			{error && <p style={{ color: 'red' }}>{error}</p>}
+		<div className={styles.container}>
+			<h1 className={styles.title}>
+				Панель администратора - Список пользователей
+			</h1>
+			{error && <p className={styles.error}>{error}</p>}
 			{!error && users.length > 0 && (
-				<table border="1" cellPadding="10" cellSpacing="0">
+				<table className={styles.table}>
 					<thead>
 						<tr>
 							<th>ID</th>
@@ -58,7 +59,7 @@ const AdminUsers = () => {
 						</tr>
 					</thead>
 					<tbody>
-						{users.map((user) => (
+						{users.map(user => (
 							<tr key={user.id}>
 								<td>{user.ID}</td>
 								<td>{user.Name}</td>
@@ -67,6 +68,7 @@ const AdminUsers = () => {
 								<td>{user.Role}</td>
 								<td>
 									<button
+										className={styles.actionButton}
 										onClick={() =>
 											navigate(`/admin/users/${user.ID}/role`, {
 												state: { user },
@@ -82,8 +84,16 @@ const AdminUsers = () => {
 				</table>
 			)}
 			{!error && users.length === 0 && <p>Список пользователей пуст.</p>}
+			<button className={styles.backButton} onClick={() => navigate('/')}>
+				Вернуться на главную
+			</button>
+			<h1 className={styles.title}>
+				Панель администратора - Список пользователей
+			</h1>
+			{/* Rest of the existing code */}
 		</div>
-	);
+	)
+	
 };
 
 export default AdminUsers;

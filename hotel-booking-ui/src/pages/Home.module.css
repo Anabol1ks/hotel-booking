@@ -1,0 +1,55 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.title {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.button {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.primaryButton {
+  background-color: #3498db;
+  color: white;
+}
+
+.primaryButton:hover {
+  background-color: #2980b9;
+}
+
+.secondaryButton {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.secondaryButton:hover {
+  background-color: #c0392b;
+}
+
+.adminButton {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.adminButton:hover {
+  background-color: #27ae60;
+}

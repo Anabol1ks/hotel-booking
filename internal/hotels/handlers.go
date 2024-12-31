@@ -150,8 +150,13 @@ func GetRoomsHandler(c *gin.Context) {
 	// фильтры цен
 	minPrice := c.Query("min_price")
 	maxPrice := c.Query("max_price")
-	if minPrice != "" && maxPrice != "" {
-		query = query.Where("price BETWEEN ? AND ?", minPrice, maxPrice)
+
+	if minPrice != "" {
+		query = query.Where("price >= ?", minPrice)
+	}
+
+	if maxPrice != "" {
+		query = query.Where("price <= ?", maxPrice)
 	}
 
 	// фильтры количества гостей

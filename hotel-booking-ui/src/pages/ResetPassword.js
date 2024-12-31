@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Cookies from 'js-cookie'
+import styles from './ResetPassword.module.css'
 
 const ResetPassword = () => {
 	const [password, setPassword] = useState('')
@@ -45,16 +46,14 @@ const ResetPassword = () => {
 
 			if (response.ok) {
 				setSuccess('Пароль успешно изменён.')
-
-				// Проверка наличия токена авторизации
 				const authToken = Cookies.get('token')
 				setTimeout(() => {
 					if (authToken) {
-						navigate('/') // Перенаправление на аккаунт
+						navigate('/')
 					} else {
-						navigate('/auth/login') // Перенаправление на страницу входа
+						navigate('/auth/login')
 					}
-				}, 2000) // Небольшая задержка для отображения сообщения успеха
+				}, 2000)
 			} else {
 				const data = await response.json()
 				setError(data.error || 'Ошибка при сбросе пароля.')
@@ -67,31 +66,35 @@ const ResetPassword = () => {
 	}
 
 	return (
-		<div>
-			<h2>Сброс пароля</h2>
-			<p>Введите новый пароль для вашей учётной записи.</p>
-			{error && <p style={{ color: 'red' }}>{error}</p>}
-			{success && <p style={{ color: 'green' }}>{success}</p>}
+		<div className={styles.container}>
+			<h2 className={styles.title}>Сброс пароля</h2>
+			<p className={styles.description}>
+				Введите новый пароль для вашей учётной записи.
+			</p>
+			{error && <p className={styles.error}>{error}</p>}
+			{success && <p className={styles.success}>{success}</p>}
 			<form onSubmit={handleSubmit}>
-				<div>
-					<label>Новый пароль</label>
+				<div className={styles.formGroup}>
+					<label className={styles.label}>Новый пароль</label>
 					<input
+						className={styles.input}
 						type='password'
 						value={password}
 						onChange={e => setPassword(e.target.value)}
 						required
 					/>
 				</div>
-				<div>
-					<label>Подтвердите пароль</label>
+				<div className={styles.formGroup}>
+					<label className={styles.label}>Подтвердите пароль</label>
 					<input
+						className={styles.input}
 						type='password'
 						value={confirmPassword}
 						onChange={e => setConfirmPassword(e.target.value)}
 						required
 					/>
 				</div>
-				<button type='submit' disabled={loading}>
+				<button className={styles.button} type='submit' disabled={loading}>
 					{loading ? 'Изменение...' : 'Сменить пароль'}
 				</button>
 			</form>
