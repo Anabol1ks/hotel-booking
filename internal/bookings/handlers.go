@@ -184,10 +184,10 @@ func init() {
 
 func cleanupUnpaidBookings() {
 	log.Println("Запуск очистки просроченных бронирований...")
-	ticker := time.NewTicker(1 * time.Minute) // Check every 5 minutes
+	ticker := time.NewTicker(3 * time.Minute) // Check every 3 minutes
 	for range ticker.C {
 		var bookings []Booking
-		thirtyMinutesAgo := time.Now().Add(-2 * time.Minute)
+		thirtyMinutesAgo := time.Now().Add(-30 * time.Minute)
 
 		// Find all unpaid bookings older than 30 minutes
 		if err := storage.DB.Where("created_at <= ? AND payment_status = ?", thirtyMinutesAgo, "pending").Find(&bookings).Error; err != nil {
