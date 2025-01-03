@@ -879,7 +879,7 @@ paths:
   /rooms:
     get:
       description: Возвращает отфильтрованный список номеров с возможностью фильтрации
-        по цене и вместимости
+        по цене, вместимости, датам бронирования и отелю
       parameters:
       - description: Минимальная цена
         in: query
@@ -892,6 +892,18 @@ paths:
       - description: Минимальная вместимость
         in: query
         name: capacity
+        type: string
+      - description: Дата начала (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Дата окончания (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: ID отеля
+        in: query
+        name: hotel_id
         type: string
       produces:
       - application/json

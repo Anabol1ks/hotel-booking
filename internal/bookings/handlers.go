@@ -3,6 +3,7 @@ package bookings
 import (
 	"hotel-booking/internal/hotels"
 	"hotel-booking/internal/storage"
+	"log"
 	"net/http"
 	"time"
 
@@ -66,6 +67,7 @@ func CreateBookingHandler(c *gin.Context) {
 		StartDate: input.StartDate,
 		EndDate:   input.EndDate,
 		TotalCost: totalPrice,
+		CreatedAt: time.Now(),
 	}
 
 	if err := storage.DB.Create(&booking).Error; err != nil {
@@ -173,4 +175,33 @@ func CancelBookingHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Бронирование успешно отменено"})
 
+}
+
+func init() {
+	// Start the cleanup goroutine
+	go cleanupUnpaidBookings()
+}
+
+func cleanupUnpaidBookings() {
+	log.Println("Запуск очистки просроченных бронирований...")
+	ticker := time.NewTicker(1 * time.Minute) // Check every 5 minutes
+	for range ticker.C {
+		var bookings []Booking
+		thirtyMinutesAgo := time.Now().Add(-2 * time.Minute)
+
+		// Find all unpaid bookings older than 30 minutes
+		if err := storage.DB.Where("created_at <= ? AND payment_status = ?", thirtyMinutesAgo, "pending").Find(&bookings).Error; err != nil {
+			log.Printf("Ошибка при обнаружении просроченных бронирований: %v", err)
+			continue
+		}
+
+		// Cancel each expired booking
+		for _, booking := range bookings {
+			if err := storage.DB.Delete(&booking).Error; err != nil {
+				log.Printf("Ошибка при отмене бронирования с истекшим сроком действия %d: %v", booking.ID, err)
+				continue
+			}
+			log.Printf("Отмененное бронирование с истекшим сроком действия %d", booking.ID)
+		}
+	}
 }

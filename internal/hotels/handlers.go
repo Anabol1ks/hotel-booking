@@ -133,12 +133,15 @@ func CreateRoomHandler(c *gin.Context) {
 
 // GetRoomsHandler godoc
 // @Summary Получение списка номеров
-// @Description Возвращает отфильтрованный список номеров с возможностью фильтрации по цене и вместимости
+// @Description Возвращает отфильтрованный список номеров с возможностью фильтрации по цене, вместимости, датам бронирования и отелю
 // @Tags rooms
 // @Produce json
 // @Param min_price query string false "Минимальная цена"
 // @Param max_price query string false "Максимальная цена"
 // @Param capacity query string false "Минимальная вместимость"
+// @Param start_date query string false "Дата начала (YYYY-MM-DD)"
+// @Param end_date query string false "Дата окончания (YYYY-MM-DD)"
+// @Param hotel_id query string false "ID отеля"
 // @Success 200 {array} response.RoomResponse "Список номеров"
 // @Failure 500 {object} response.ErrorResponse "Ошибка при получении номеров"
 // @Router /rooms [get]
@@ -147,6 +150,21 @@ func GetRoomsHandler(c *gin.Context) {
 
 	query := storage.DB
 
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+
+	if startDate != "" && endDate != "" {
+		query = query.Where("id NOT IN (?)",
+			storage.DB.Table("bookings").
+				Select("room_id").
+				Where("(start_date <= ? AND end_date >= ?) OR (start_date <= ? AND end_date >= ?) OR (start_date >= ? AND end_date <= ?)",
+					endDate, startDate, endDate, startDate, startDate, endDate))
+	}
+
+	hotelID := c.Query("hotel_id")
+	if hotelID != "" {
+		query = query.Where("hotel_id = ?", hotelID)
+	}
 	// фильтры цен
 	minPrice := c.Query("min_price")
 	maxPrice := c.Query("max_price")

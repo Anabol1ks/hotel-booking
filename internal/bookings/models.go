@@ -8,6 +8,7 @@ import (
 
 type Booking struct {
 	gorm.Model
+	CreatedAt     time.Time
 	RoomID        uint      `gorm:"not null"`
 	UserID        uint      `gorm:"not null"`
 	StartDate     time.Time `gorm:"not null"`

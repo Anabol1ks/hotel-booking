@@ -1024,7 +1024,7 @@ const docTemplate = `{
         },
         "/rooms": {
             "get": {
-                "description": "Возвращает отфильтрованный список номеров с возможностью фильтрации по цене и вместимости",
+                "description": "Возвращает отфильтрованный список номеров с возможностью фильтрации по цене, вместимости, датам бронирования и отелю",
                 "produces": [
                     "application/json"
                 ],
@@ -1049,6 +1049,24 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Минимальная вместимость",
                         "name": "capacity",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата начала (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата окончания (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID отеля",
+                        "name": "hotel_id",
                         "in": "query"
                     }
                 ],

@@ -326,5 +326,18 @@ func RefundPaymentHandler(c *gin.Context) {
 		return
 	}
 
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
+		// Update booking status
+		booking.PaymentStatus = "refunded"
+
+		// Delete the booking to free up the room
+		if err := storage.DB.Delete(&booking).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении бронирования"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Оплата отменена и номер освобожден"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Оплата отменена"})
 }
