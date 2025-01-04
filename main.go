@@ -39,7 +39,7 @@ func main() {
 	storage.ConnectDatabase()
 
 	// Выполнение миграций
-	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
+	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Favorite{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
 	if err != nil {
 		log.Fatal("Ошибка миграции:", err)
 	}
@@ -74,6 +74,10 @@ func main() {
 		authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
 		authorized.DELETE("/bookings/:id", bookings.CancelBookingHandler)
 		authorized.POST("/bookings/:id/refund", payments.RefundPaymentHandler)
+		authorized.POST("/favorites/:room_id", hotels.AddToFavoritesHandler)
+		authorized.GET("/favorites", hotels.GetFavoritesHandler)
+		authorized.DELETE("/favorites/:room_id", hotels.RemoveFromFavoritesHandler)
+
 	}
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 

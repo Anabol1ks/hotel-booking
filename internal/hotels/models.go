@@ -1,6 +1,8 @@
 package hotels
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type Hotel struct {
 	gorm.Model
@@ -19,4 +21,10 @@ type Room struct {
 	Amenities string  `gorm:"type:text"`                 // Удобства
 	Capacity  int     `gorm:"not null"`                  // Количество гостей
 	Available bool    `gorm:"default:true"`              // Наличие
+}
+
+type Favorite struct {
+	gorm.Model
+	UserID uint `gorm:"user_id"`
+	RoomID uint `gorm:"room_id"`
 }

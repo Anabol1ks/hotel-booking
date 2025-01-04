@@ -617,6 +617,82 @@ paths:
       summary: Отправка тестового письма
       tags:
       - email
+  /favorites:
+    get:
+      description: Возвращает список избранных номеров пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список избранных номеров
+          schema:
+            items:
+              $ref: '#/definitions/response.RoomResponse'
+            type: array
+        "500":
+          description: Ошибка при получении списка избранного
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка избранных номеров
+      tags:
+      - favorites
+  /favorites/{room_id}:
+    delete:
+      description: Удаляет номер из списка избранных пользователя
+      parameters:
+      - description: ID номера
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Номер успешно удален из избранного
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "404":
+          description: Номер не найден в избранном
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление номера из избранного
+      tags:
+      - favorites
+    post:
+      consumes:
+      - application/json
+      description: Добавляет номер в список избранных пользователя
+      parameters:
+      - description: ID номера
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Номер успешно добавлен в избранное
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Номер уже в избранном
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавление номера в избранное
+      tags:
+      - favorites
   /hotels:
     get:
       description: Возвращает список всех отелей, включая связанные номера.

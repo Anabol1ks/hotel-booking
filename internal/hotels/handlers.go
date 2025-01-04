@@ -327,3 +327,94 @@ func DeleteRoomHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Номер успешно удален"})
 }
+
+// @Security BearerAuth
+// AddToFavoritesHandler godoc
+// @Summary Добавление номера в избранное
+// @Description Добавляет номер в список избранных пользователя
+// @Tags favorites
+// @Accept json
+// @Produce json
+// @Param room_id path int true "ID номера"
+// @Success 201 {object} response.MessageResponse "Номер успешно добавлен в избранное"
+// @Failure 400 {object} response.ErrorResponse "Номер уже в избранном"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Router /favorites/{room_id} [post]
+func AddToFavoritesHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	roomID := c.Param("room_id")
+
+	// Проверяем существование номера
+	var room Room
+	if err := storage.DB.First(&room, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	// Проверяем, не добавлен ли номер уже в избранное
+	var existing Favorite
+	result := storage.DB.Where("user_id = ? AND room_id = ?", userID, roomID).First(&existing)
+	if result.RowsAffected > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Номер уже в избранном"})
+		return
+	}
+
+	// Создаем новую запись в избранном
+	favorite := Favorite{
+		UserID: userID,
+		RoomID: room.ID,
+	}
+
+	if err := storage.DB.Create(&favorite).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при добавлении в избранное"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Номер успешно добавлен в избранное"})
+}
+
+// @Security BearerAuth
+// GetFavoritesHandler godoc
+// @Summary Получение списка избранных номеров
+// @Description Возвращает список избранных номеров пользователя
+// @Tags favorites
+// @Produce json
+// @Success 200 {array} response.RoomResponse "Список избранных номеров"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении списка избранного"
+// @Router /favorites [get]
+func GetFavoritesHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var rooms []Room
+	if err := storage.DB.Joins("JOIN favorites ON rooms.id = favorites.room_id").
+		Where("favorites.user_id = ? AND favorites.deleted_at IS NULL", userID).
+		Find(&rooms).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении избранных номеров"})
+		return
+	}
+
+	c.JSON(http.StatusOK, rooms)
+}
+
+// @Security BearerAuth
+// RemoveFromFavoritesHandler godoc
+// @Summary Удаление номера из избранного
+// @Description Удаляет номер из списка избранных пользователя
+// @Tags favorites
+// @Produce json
+// @Param room_id path int true "ID номера"
+// @Success 200 {object} response.MessageResponse "Номер успешно удален из избранного"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден в избранном"
+// @Router /favorites/{room_id} [delete]
+func RemoveFromFavoritesHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	roomID := c.Param("room_id")
+
+	result := storage.DB.Where("user_id = ? AND room_id = ?", userID, roomID).Delete(&Favorite{})
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден в избранном"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Номер успешно удален из избранного"})
+}
