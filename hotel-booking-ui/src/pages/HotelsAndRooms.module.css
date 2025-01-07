@@ -89,3 +89,24 @@ h2 {
 .backButton:hover {
   background-color: #7f8c8d;
 }
+  .favoriteButton {
+    background-color: #ff385c;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .favoriteButton:hover {
+    background-color: #e31c5f;
+  }
+
+  .removeButton {
+    background-color: #666;
+  }
+
+  .removeButton:hover {
+    background-color: #555;
+  }

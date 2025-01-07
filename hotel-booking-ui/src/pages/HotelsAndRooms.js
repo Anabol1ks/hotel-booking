@@ -1,71 +1,144 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom' // Add this import
+import { useNavigate } from 'react-router-dom'
+import Cookies from 'js-cookie'
 import styles from './HotelsAndRooms.module.css'
 
 const HotelsAndRooms = () => {
-  const [hotels, setHotels] = useState([])
-  const [rooms, setRooms] = useState([])
-  const [error, setError] = useState('')
-  const [filters, setFilters] = useState({
-    minPrice: '',
-    maxPrice: '',
-    capacity: ''
-  })
+	const [hotels, setHotels] = useState([])
+	const [rooms, setRooms] = useState([])
+	const [error, setError] = useState('')
+	const [isAuthenticated, setIsAuthenticated] = useState(false)
+	const [favoriteRooms, setFavoriteRooms] = useState(new Set())
+	const [filters, setFilters] = useState({
+		minPrice: '',
+		maxPrice: '',
+		capacity: ''
+	})
+	const navigate = useNavigate()
 
-  const fetchHotels = async () => {
-    try {
-      const response = await fetch('http://localhost:8080/hotels')
-      if (response.ok) {
-        const data = await response.json()
-        setHotels(data)
-      }
-    } catch (err) {
-      setError('Ошибка при загрузке отелей')
-    }
-  }
+	useEffect(() => {
+		const token = Cookies.get('token')
+		setIsAuthenticated(!!token)
+	}, [])
 
-  const fetchRooms = useCallback(async () => {
-    try {
-      const queryParams = new URLSearchParams()
-      if (filters.minPrice) queryParams.append('min_price', filters.minPrice)
-      if (filters.maxPrice) queryParams.append('max_price', filters.maxPrice)
-      if (filters.capacity) queryParams.append('capacity', filters.capacity)
+	const fetchHotels = async () => {
+		try {
+			const response = await fetch('http://localhost:8080/hotels')
+			if (response.ok) {
+				const data = await response.json()
+				setHotels(data)
+			}
+		} catch (err) {
+			setError('Ошибка при загрузке отелей')
+		}
+	}
 
-      const response = await fetch(`http://localhost:8080/rooms?${queryParams}`)
-      if (response.ok) {
-        const data = await response.json()
-        setRooms(data)
-      }
-    } catch (err) {
-      setError('Ошибка при загрузке номеров')
-    }
-  }, [filters])
+	const fetchRooms = useCallback(async () => {
+		try {
+			const queryParams = new URLSearchParams()
+			if (filters.minPrice) queryParams.append('min_price', filters.minPrice)
+			if (filters.maxPrice) queryParams.append('max_price', filters.maxPrice)
+			if (filters.capacity) queryParams.append('capacity', filters.capacity)
 
-  useEffect(() => {
-    fetchHotels()
-  }, [])
+			const response = await fetch(`http://localhost:8080/rooms?${queryParams}`)
+			if (response.ok) {
+				const data = await response.json()
+				setRooms(data)
+			}
+		} catch (err) {
+			setError('Ошибка при загрузке номеров')
+		}
+	}, [filters])
 
-  useEffect(() => {
-    fetchRooms()
-  }, [fetchRooms])
+	const fetchFavorites = async () => {
+		if (!isAuthenticated) return
+		
+		try {
+			const response = await fetch('http://localhost:8080/favorites', {
+				headers: {
+					Authorization: `Bearer ${Cookies.get('token')}`
+				}
+			})
+			if (response.ok) {
+				const data = await response.json()
+				setFavoriteRooms(new Set(data.map(room => room.ID)))
+			}
+		} catch (err) {
+			console.error('Ошибка при загрузке избранного:', err)
+		}
+	}
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+	const handleAddToFavorites = async (roomId) => {
+		if (!isAuthenticated) {
+			alert('Пожалуйста, авторизуйтесь чтобы добавить номер в избранное')
+			navigate('/login')
+			return
+		}
 
-  const navigate = useNavigate()
+		try {
+			const response = await fetch(`http://localhost:8080/favorites/${roomId}`, {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${Cookies.get('token')}`,
+				},
+			})
 
-  return (
+			if (response.ok) {
+				setFavoriteRooms(prev => new Set([...prev, roomId]))
+				alert('Номер добавлен в избранное')
+			}
+		} catch (err) {
+			console.error('Ошибка при добавлении в избранное:', err)
+		}
+	}
+
+	const removeFromFavorites = async (roomId) => {
+		try {
+			const response = await fetch(`http://localhost:8080/favorites/${roomId}`, {
+				method: 'DELETE',
+				headers: {
+					Authorization: `Bearer ${Cookies.get('token')}`
+				}
+			})
+			if (response.ok) {
+				setFavoriteRooms(prev => {
+					const newSet = new Set(prev)
+					newSet.delete(roomId)
+					return newSet
+				})
+				alert('Номер удален из избранного')
+			}
+		} catch (err) {
+			console.error('Ошибка при удалении из избранного:', err)
+		}
+	}
+
+	useEffect(() => {
+		fetchHotels()
+	}, [])
+
+	useEffect(() => {
+		fetchRooms()
+	}, [fetchRooms])
+
+	useEffect(() => {
+		fetchFavorites()
+	}, [isAuthenticated])
+
+	const handleFilterChange = (e) => {
+		const { name, value } = e.target
+		setFilters(prev => ({
+			...prev,
+			[name]: value
+		}))
+	}
+
+	return (
 		<div className={styles.container}>
 			<div>
 				<button className={styles.backButton} onClick={() => navigate('/')}>
 					Вернуться на главную
 				</button>
-				{/* ... rest of the existing JSX ... */}
 			</div>
 			<h1 className={styles.title}>Отели и номера</h1>
 			<div className={styles.filters}>
@@ -122,6 +195,21 @@ const HotelsAndRooms = () => {
 							<p>Цена: {room.Price} руб/ночь</p>
 							<p>Вместимость: {room.Capacity} чел.</p>
 							<p>Удобства: {room.Amenities}</p>
+							{favoriteRooms.has(room.ID) ? (
+								<button 
+									onClick={() => removeFromFavorites(room.ID)}
+									className={`${styles.favoriteButton} ${styles.removeButton}`}
+								>
+									Убрать из избранного
+								</button>
+							) : (
+								<button 
+									onClick={() => handleAddToFavorites(room.ID)}
+									className={styles.favoriteButton}
+								>
+									Добавить в избранное
+								</button>
+							)}
 						</div>
 					))}
 				</div>
