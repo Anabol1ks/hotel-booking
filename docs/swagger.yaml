@@ -55,6 +55,25 @@ definitions:
     - room_id
     - start_date
     type: object
+  bookings.CreateOfflineBookingInput:
+    properties:
+      end_date:
+        type: string
+      name:
+        type: string
+      phone_number:
+        type: string
+      room_id:
+        type: integer
+      start_date:
+        type: string
+    required:
+    - end_date
+    - name
+    - phone_number
+    - room_id
+    - start_date
+    type: object
   hotels.CreateHotelInput:
     properties:
       address:
@@ -213,6 +232,7 @@ definitions:
         - owner
         - admin
         - client
+        - manager
         type: string
     required:
     - role
@@ -588,6 +608,50 @@ paths:
       summary: Обработка возврата платежа
       tags:
       - payments
+  /bookings/offline:
+    post:
+      consumes:
+      - application/json
+      description: Создание брони менеджером или владельцем для клиента без аккаунта
+      parameters:
+      - description: Данные для офлайн бронирования
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/bookings.CreateOfflineBookingInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.BookingResponse'
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Только менеджеры и владельцы могут создавать офлайн бронирования
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Номер уже забронирован в этот период
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при проверке доступности номера или при создании бронирования
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание брони для офлайн клиента
+      tags:
+      - bookings
   /email/test:
     get:
       consumes:

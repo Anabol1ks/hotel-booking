@@ -9,6 +9,7 @@ const HotelsAndRooms = () => {
 	const [error, setError] = useState('')
 	const [isAuthenticated, setIsAuthenticated] = useState(false)
 	const [favoriteRooms, setFavoriteRooms] = useState(new Set())
+	const [bookingDates, setBookingDates] = useState({})
 	const [filters, setFilters] = useState({
 		minPrice: '',
 		maxPrice: '',
@@ -33,12 +34,16 @@ const HotelsAndRooms = () => {
 		}
 	}
 
+	const [selectedHotel, setSelectedHotel] = useState(null)
+
+
 	const fetchRooms = useCallback(async () => {
 		try {
 			const queryParams = new URLSearchParams()
 			if (filters.minPrice) queryParams.append('min_price', filters.minPrice)
 			if (filters.maxPrice) queryParams.append('max_price', filters.maxPrice)
 			if (filters.capacity) queryParams.append('capacity', filters.capacity)
+			if (selectedHotel) queryParams.append('hotel_id', selectedHotel)
 
 			const response = await fetch(`http://localhost:8080/rooms?${queryParams}`)
 			if (response.ok) {
@@ -48,7 +53,7 @@ const HotelsAndRooms = () => {
 		} catch (err) {
 			setError('Ошибка при загрузке номеров')
 		}
-	}, [filters])
+	}, [filters, selectedHotel])
 
 	const fetchFavorites = async () => {
 		if (!isAuthenticated) return
@@ -133,6 +138,62 @@ const HotelsAndRooms = () => {
 		}))
 	}
 
+	const handleBookRoom = async (roomId) => {
+		if (!isAuthenticated) {
+			alert('Пожалуйста, авторизуйтесь чтобы забронировать номер')
+			navigate('/login')
+			return
+		}
+
+		const startDate = bookingDates[roomId]?.startDate
+		const endDate = bookingDates[roomId]?.endDate
+
+		if (!startDate || !endDate) {
+			alert('Пожалуйста, выберите даты бронирования')
+			return
+		}
+
+		try {
+			const response = await fetch('http://localhost:8080/bookings', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${Cookies.get('token')}`
+				},
+				body: JSON.stringify({
+					room_id: roomId,
+					start_date: startDate,
+					end_date: endDate
+				})
+			})
+
+			if (response.ok) {
+				alert('Номер успешно забронирован!')
+				// Очистить даты бронирования для этого номера
+				setBookingDates(prev => ({
+					...prev,
+					[roomId]: { startDate: null, endDate: null }
+				}))
+			} else {
+				const errorData = await response.json()
+				alert(errorData.error || 'Ошибка при бронировании')
+			}
+		} catch (err) {
+			console.error('Ошибка при бронировании:', err)
+			alert('Не удалось забронировать номер')
+		}
+	}
+
+	const handleDateChange = (roomId, dateType, value) => {
+		setBookingDates(prev => ({
+			...prev,
+			[roomId]: {
+				...prev[roomId],
+				[dateType]: value
+			}
+		}))
+	}
+
 	return (
 		<div className={styles.container}>
 			<div>
@@ -195,6 +256,32 @@ const HotelsAndRooms = () => {
 							<p>Цена: {room.Price} руб/ночь</p>
 							<p>Вместимость: {room.Capacity} чел.</p>
 							<p>Удобства: {room.Amenities}</p>
+
+							{isAuthenticated && (
+								<div className={styles.bookingSection}>
+									<div className={styles.bookingDates}>
+										<label>Дата заезда:</label>
+										<input
+											type="date"
+											value={bookingDates[room.ID]?.startDate || ''}
+											onChange={(e) => handleDateChange(room.ID, 'startDate', e.target.value)}
+										/>
+										<label>Дата выезда:</label>
+										<input
+											type="date"
+											value={bookingDates[room.ID]?.endDate || ''}
+											onChange={(e) => handleDateChange(room.ID, 'endDate', e.target.value)}
+										/>
+									</div>
+									<button 
+										onClick={() => handleBookRoom(room.ID)}
+										className={styles.bookButton}
+									>
+										Забронировать
+									</button>
+								</div>
+							)}
+
 							{favoriteRooms.has(room.ID) ? (
 								<button 
 									onClick={() => removeFromFavorites(room.ID)}
@@ -219,3 +306,4 @@ const HotelsAndRooms = () => {
 }
 
 export default HotelsAndRooms
+

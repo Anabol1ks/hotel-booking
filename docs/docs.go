@@ -402,6 +402,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/bookings/offline": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создание брони менеджером или владельцем для клиента без аккаунта",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Создание брони для офлайн клиента",
+                "parameters": [
+                    {
+                        "description": "Данные для офлайн бронирования",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/bookings.CreateOfflineBookingInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.BookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Только менеджеры и владельцы могут создавать офлайн бронирования",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Номер не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Номер уже забронирован в этот период",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при проверке доступности номера или при создании бронирования",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/bookings/{id}": {
             "delete": {
                 "security": [
@@ -1333,6 +1402,33 @@ const docTemplate = `{
                 }
             }
         },
+        "bookings.CreateOfflineBookingInput": {
+            "type": "object",
+            "required": [
+                "end_date",
+                "name",
+                "phone_number",
+                "room_id",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "room_id": {
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                }
+            }
+        },
         "hotels.CreateHotelInput": {
             "type": "object",
             "required": [
@@ -1571,7 +1667,8 @@ const docTemplate = `{
                     "enum": [
                         "owner",
                         "admin",
-                        "client"
+                        "client",
+                        "manager"
                     ]
                 }
             }
