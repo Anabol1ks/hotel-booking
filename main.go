@@ -77,7 +77,7 @@ func main() {
 		authorized.POST("/favorites/:room_id", hotels.AddToFavoritesHandler)
 		authorized.GET("/favorites", hotels.GetFavoritesHandler)
 		authorized.DELETE("/favorites/:room_id", hotels.RemoveFromFavoritesHandler)
-
+		authorized.POST("/booking/offline", bookings.CreateOfflineBookingHandler)
 	}
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 

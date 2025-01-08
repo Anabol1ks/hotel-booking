@@ -8,7 +8,7 @@ import (
 )
 
 type UpdateRoleInput struct {
-	Role string `json:"role" binding:"required" enums:"owner,admin,client"`
+	Role string `json:"role" binding:"required" enums:"owner,admin,client,manager"`
 }
 
 // @Security BearerAuth
@@ -42,7 +42,7 @@ func UpdateRoleHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	validRoles := map[string]bool{"owner": true, "client": true, "admin": true}
+	validRoles := map[string]bool{"owner": true, "client": true, "admin": true, "manager": true}
 	if !validRoles[input.Role] {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверная роль"})
 		return

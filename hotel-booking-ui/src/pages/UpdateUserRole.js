@@ -11,7 +11,7 @@ const UpdateUserRole = () => {
 	const [error, setError] = useState('')
 	const [success, setSuccess] = useState('')
 	const [loading, setLoading] = useState(false)
-	const roles = ['client', 'owner', 'admin']
+	const roles = ['client', 'owner', 'admin', 'manager']
 
 	const handleSubmit = async e => {
 		e.preventDefault()

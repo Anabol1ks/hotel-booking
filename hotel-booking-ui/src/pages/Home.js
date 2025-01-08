@@ -31,6 +31,15 @@ const Home = () => {
 					Просмотр отелей и номеров
 				</button>
 				
+				{(role === 'manager' || role === 'owner') && (
+					<button 
+						className={`${styles.button} ${styles.primaryButton}`}
+						onClick={() => navigate('/bookings/offline/create')}
+					>
+						Создать офлайн бронирование
+					</button>
+				)}
+
 				{role === 'admin' && (
 					<button 
 						className={`${styles.button} ${styles.adminButton}`}

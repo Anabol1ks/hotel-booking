@@ -8,6 +8,8 @@ import AdminUsers from './pages/AdminUsers'
 import UpdateUserRole from './pages/UpdateUserRole'
 import ForgotPassword from './pages/ForgotPassword'
 import HotelsAndRooms from './pages/HotelsAndRooms'
+import CreateOfflineBooking from './pages/CreateOfflineBooking'
+
 
 
 
@@ -25,6 +27,10 @@ const App = () => {
 				<Route path='/admin/users' element={<AdminUsers />} />
 				<Route path='/admin/users/:id/role' element={<UpdateUserRole />} />
 				<Route path='/hotels-and-rooms' element={<HotelsAndRooms />} />
+				<Route
+					path='/bookings/offline/create'
+					element={<CreateOfflineBooking />}
+				/>
 			</Routes>
 		</Router>
 	)

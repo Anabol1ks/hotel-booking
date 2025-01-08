@@ -3,6 +3,7 @@ package bookings
 import (
 	"hotel-booking/internal/hotels"
 	"hotel-booking/internal/storage"
+	"hotel-booking/internal/users"
 	"log"
 	"net/http"
 	"time"
@@ -45,6 +46,16 @@ func CreateBookingHandler(c *gin.Context) {
 		return
 	}
 
+	if input.StartDate.After(input.EndDate) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Дата заезда не может быть позже даты выезда"})
+		return
+	}
+
+	if input.StartDate.Before(time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Дата заезда не может быть в прошлом"})
+		return
+	}
+
 	// доступность номера
 	var overlappingBookings []Booking
 	if err := storage.DB.Where("room_id = ? AND NOT (end_date <= ? OR start_date >= ?)", input.RoomID, input.StartDate, input.EndDate).Find(&overlappingBookings).Error; err != nil {
@@ -68,6 +79,119 @@ func CreateBookingHandler(c *gin.Context) {
 		EndDate:   input.EndDate,
 		TotalCost: totalPrice,
 		CreatedAt: time.Now(),
+	}
+
+	if err := storage.DB.Create(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании бронирования"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, booking)
+}
+
+type CreateOfflineBookingInput struct {
+	RoomID      uint      `json:"room_id" binding:"required"`
+	StartDate   time.Time `json:"start_date" binding:"required"`
+	EndDate     time.Time `json:"end_date" binding:"required"`
+	PhoneNumber string    `json:"phone_number" binding:"required"`
+	Name        string    `json:"name" binding:"required"`
+}
+
+// @Security BearerAuth
+// CreateOfflineBookingHandler godoc
+// @Summary Создание брони для офлайн клиента
+// @Description Создание брони менеджером или владельцем для клиента без аккаунта
+// @Tags bookings
+// @Accept json
+// @Produce json
+// @Param input body CreateOfflineBookingInput true "Данные для офлайн бронирования"
+// @Success 201 {object} response.BookingResponse
+// @Failure 403 {object} response.ErrorResponse "Только менеджеры и владельцы могут создавать офлайн бронирования"
+// @Failure 400 {object} response.ErrorResponse "Ошибка валидации"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Failure 409 {object} response.ErrorResponse "Номер уже забронирован в этот период"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при проверке доступности номера или при создании бронирования"
+// @Router /bookings/offline [post]
+func CreateOfflineBookingHandler(c *gin.Context) {
+	// Проверка роли
+	role := c.GetString("role")
+	if role != "owner" && role != "manager" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Только менеджеры и владельцы могут создавать офлайн бронирования"})
+		return
+	}
+
+	var input CreateOfflineBookingInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.StartDate.After(input.EndDate) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Дата заезда не может быть позже даты выезда"})
+		return
+	}
+
+	if input.StartDate.Before(time.Now()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Дата заезда не может быть в прошлом"})
+		return
+	}
+
+	// Поиск существующего пользователя по телефону
+	var user users.User
+	result := storage.DB.Where("phone = ?", input.PhoneNumber).First(&user)
+
+	if result.Error != nil {
+		// Создаем нового пользователя
+		user = users.User{
+			Phone: input.PhoneNumber,
+			Name:  input.Name,
+			Role:  "client",
+			// Генерируем временный пароль или оставляем пустым
+		}
+		if err := storage.DB.Create(&user).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании пользователя"})
+			return
+		}
+	}
+
+	// Проверка номера
+	var room hotels.Room
+	if err := storage.DB.First(&room, input.RoomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	// Проверка доступности
+	var overlappingBookings []Booking
+	if err := storage.DB.Where(
+		"room_id = ? AND NOT (end_date <= ? OR start_date >= ?)",
+		input.RoomID,
+		input.StartDate,
+		input.EndDate,
+	).Find(&overlappingBookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при проверке доступности номера"})
+		return
+	}
+
+	if len(overlappingBookings) > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Номер уже забронирован в этот период"})
+		return
+	}
+
+	// Расчет стоимости
+	days := input.EndDate.Sub(input.StartDate).Hours() / 24
+	totalPrice := days * float64(room.Price)
+
+	// Создание бронирования
+	booking := Booking{
+		RoomID:           input.RoomID,
+		UserID:           user.ID,
+		StartDate:        input.StartDate,
+		EndDate:          input.EndDate,
+		TotalCost:        totalPrice,
+		CreatedAt:        time.Now(),
+		PaymentStatus:    "pending", // Офлайн бронирования считаются оплаченными
+		IsOfflineBooking: true,
 	}
 
 	if err := storage.DB.Create(&booking).Error; err != nil {
@@ -184,18 +308,22 @@ func init() {
 
 func cleanupUnpaidBookings() {
 	log.Println("Запуск очистки просроченных бронирований...")
-	ticker := time.NewTicker(3 * time.Minute) // Check every 3 minutes
+	ticker := time.NewTicker(3 * time.Minute)
 	for range ticker.C {
 		var bookings []Booking
 		thirtyMinutesAgo := time.Now().Add(-30 * time.Minute)
 
-		// Find all unpaid bookings older than 30 minutes
-		if err := storage.DB.Where("created_at <= ? AND payment_status = ?", thirtyMinutesAgo, "pending").Find(&bookings).Error; err != nil {
+		// Находим только онлайн-бронирования с истекшим сроком
+		if err := storage.DB.Where(
+			"created_at <= ? AND payment_status = ? AND is_offline_booking = ?",
+			thirtyMinutesAgo,
+			"pending",
+			false,
+		).Find(&bookings).Error; err != nil {
 			log.Printf("Ошибка при обнаружении просроченных бронирований: %v", err)
 			continue
 		}
 
-		// Cancel each expired booking
 		for _, booking := range bookings {
 			if err := storage.DB.Delete(&booking).Error; err != nil {
 				log.Printf("Ошибка при отмене бронирования с истекшим сроком действия %d: %v", booking.ID, err)
