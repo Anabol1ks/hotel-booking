@@ -38,7 +38,7 @@ const Register = () => {
 
 			if (response.status === 201) {
 				setSuccess('Регистрация успешна!')
-				history('/login') // Перенаправление на страницу входа
+				history('auth/login') // Перенаправление на страницу входа
 			} else {
 				setError(data.error || 'Ошибка регистрации')
 			}
