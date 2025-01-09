@@ -6,7 +6,7 @@ import styles from './Home.module.css'
 const Home = () => {
 	const [role, setRole] = useState(null)
 	const navigate = useNavigate()
-
+	console.log(process.env.REACT_APP_API_URL)
 	useEffect(() => {
 		const storedRole = Cookies.get('role')
 		if (storedRole) {
