@@ -24,7 +24,7 @@ const HotelsAndRooms = () => {
 
 	const fetchHotels = async () => {
 		try {
-			const response = await fetch('http://localhost:8080/hotels')
+			const response = await fetch(process.env.REACT_APP_API_URL + '/hotels')
 			if (response.ok) {
 				const data = await response.json()
 				setHotels(data)
@@ -45,7 +45,7 @@ const HotelsAndRooms = () => {
 			if (filters.capacity) queryParams.append('capacity', filters.capacity)
 			if (selectedHotel) queryParams.append('hotel_id', selectedHotel)
 
-			const response = await fetch(`http://localhost:8080/rooms?${queryParams}`)
+			const response = await fetch(process.env.REACT_APP_API_URL + `/rooms?${queryParams}`)
 			if (response.ok) {
 				const data = await response.json()
 				setRooms(data)
@@ -59,11 +59,14 @@ const HotelsAndRooms = () => {
 		if (!isAuthenticated) return
 		
 		try {
-			const response = await fetch('http://localhost:8080/favorites', {
-				headers: {
-					Authorization: `Bearer ${Cookies.get('token')}`
+			const response = await fetch(
+				process.env.REACT_APP_API_URL + '/favorites',
+				{
+					headers: {
+						Authorization: `Bearer ${Cookies.get('token')}`,
+					},
 				}
-			})
+			)
 			if (response.ok) {
 				const data = await response.json()
 				setFavoriteRooms(new Set(data.map(room => room.ID)))
@@ -81,7 +84,7 @@ const HotelsAndRooms = () => {
 		}
 
 		try {
-			const response = await fetch(`http://localhost:8080/favorites/${roomId}`, {
+			const response = await fetch(process.env.REACT_APP_API_URL + `/favorites/${roomId}`, {
 				method: 'POST',
 				headers: {
 					Authorization: `Bearer ${Cookies.get('token')}`,
@@ -99,7 +102,7 @@ const HotelsAndRooms = () => {
 
 	const removeFromFavorites = async (roomId) => {
 		try {
-			const response = await fetch(`http://localhost:8080/favorites/${roomId}`, {
+			const response = await fetch(process.env.REACT_APP_API_URL + `/favorites/${roomId}`, {
 				method: 'DELETE',
 				headers: {
 					Authorization: `Bearer ${Cookies.get('token')}`
@@ -138,7 +141,7 @@ const HotelsAndRooms = () => {
 		}))
 	}
 
-	const handleBookRoom = async (roomId) => {
+	const handleBookRoom = async roomId => {
 		if (!isAuthenticated) {
 			alert('Пожалуйста, авторизуйтесь чтобы забронировать номер')
 			navigate('/login')
@@ -154,25 +157,27 @@ const HotelsAndRooms = () => {
 		}
 
 		try {
-			const response = await fetch('http://localhost:8080/bookings', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${Cookies.get('token')}`
-				},
-				body: JSON.stringify({
-					room_id: roomId,
-					start_date: startDate,
-					end_date: endDate
-				})
-			})
+			const response = await fetch(
+				process.env.REACT_APP_API_URL + '/bookings',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${Cookies.get('token')}`,
+					},
+					body: JSON.stringify({
+						room_id: roomId,
+						start_date: new Date(startDate).toISOString(),
+						end_date: new Date(endDate).toISOString(),
+					}),
+				}
+			)
 
 			if (response.ok) {
 				alert('Номер успешно забронирован!')
-				// Очистить даты бронирования для этого номера
 				setBookingDates(prev => ({
 					...prev,
-					[roomId]: { startDate: null, endDate: null }
+					[roomId]: { startDate: null, endDate: null },
 				}))
 			} else {
 				const errorData = await response.json()

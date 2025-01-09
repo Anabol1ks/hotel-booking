@@ -15,7 +15,7 @@ const ForgotPassword = () => {
 
 		try {
 			const response = await fetch(
-				'http://localhost:8080/auth/reset-password-request',
+				process.env.REACT_APP_API_URL + '/auth/reset-password-request',
 				{
 					method: 'POST',
 					headers: {

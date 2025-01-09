@@ -32,19 +32,22 @@ const CreateOfflineBooking = () => {
 
 		try {
 			const token = Cookies.get('token')
-			const response = await fetch('http://localhost:8080/booking/offline', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({
-					...formData,
-					start_date: new Date(formData.start_date).toISOString(),
-					end_date: new Date(formData.end_date).toISOString(),
-					room_id: parseInt(formData.room_id),
-				}),
-			})
+			const response = await fetch(
+				process.env.REACT_APP_API_URL + '/booking/offline',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${token}`,
+					},
+					body: JSON.stringify({
+						...formData,
+						start_date: new Date(formData.start_date).toISOString(),
+						end_date: new Date(formData.end_date).toISOString(),
+						room_id: parseInt(formData.room_id),
+					}),
+				}
+			)
 
 			const data = await response.json()
 

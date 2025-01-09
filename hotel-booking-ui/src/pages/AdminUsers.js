@@ -17,7 +17,7 @@ const AdminUsers = () => {
 					return;
 				}
 
-				const response = await fetch('http://localhost:8080/admin/users', {
+				const response = await fetch(process.env.REACT_APP_API_URL + '/admin/users', {
 					method: 'GET',
 					headers: {
 						Authorization: `Bearer ${token}`,

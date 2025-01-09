@@ -22,7 +22,7 @@ const UpdateUserRole = () => {
 		try {
 			const token = Cookies.get('token')
 			const response = await fetch(
-				`http://localhost:8080/admin/users/${user.ID}/role`,
+				process.env.REACT_APP_API_URL + `/admin/users/${user.ID}/role`,
 				{
 					method: 'PUT',
 					headers: {
