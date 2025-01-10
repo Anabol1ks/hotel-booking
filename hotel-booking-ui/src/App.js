@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Routes } from 'react-router'
 import ResetPassword from './pages/ResetPassword'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -9,11 +9,11 @@ import UpdateUserRole from './pages/UpdateUserRole'
 import ForgotPassword from './pages/ForgotPassword'
 import HotelsAndRooms from './pages/HotelsAndRooms'
 import CreateOfflineBooking from './pages/CreateOfflineBooking'
-
-
-
-
-
+import OwnerHotels from './pages/OwnerHotels'
+import CreateHotel from './pages/CreateHotel'
+import OwnerRooms from './pages/OwnerRooms'
+import CreateRoom from './pages/CreateRoom'
+import EditRoom from './pages/EditRoom'
 
 const App = () => {
 	return (
@@ -31,6 +31,11 @@ const App = () => {
 					path='/bookings/offline/create'
 					element={<CreateOfflineBooking />}
 				/>
+				<Route path='/owner/hotels' element={<OwnerHotels />} />
+        <Route path='/owner/hotels/create' element={<CreateHotel />} />
+        <Route path='/owner/rooms' element={<OwnerRooms />} />
+        <Route path='/owner/rooms/create' element={<CreateRoom />} />
+        <Route path='/owner/rooms/:id/edit' element={<EditRoom />} />
 			</Routes>
 		</Router>
 	)

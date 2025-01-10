@@ -6,7 +6,7 @@ import styles from './Home.module.css'
 const Home = () => {
 	const [role, setRole] = useState(null)
 	const navigate = useNavigate()
-	console.log(process.env.REACT_APP_API_URL)
+
 	useEffect(() => {
 		const storedRole = Cookies.get('role')
 		if (storedRole) {
@@ -31,6 +31,23 @@ const Home = () => {
 					Просмотр отелей и номеров
 				</button>
 				
+				{role === 'owner' && (
+					<>
+						<button 
+							className={`${styles.button} ${styles.primaryButton}`}
+							onClick={() => navigate('/owner/hotels')}
+						>
+							Управление отелями
+						</button>
+						<button 
+							className={`${styles.button} ${styles.primaryButton}`}
+							onClick={() => navigate('/owner/rooms')}
+						>
+							Управление номерами
+						</button>
+					</>
+				)}
+
 				{(role === 'manager' || role === 'owner') && (
 					<button 
 						className={`${styles.button} ${styles.primaryButton}`}
@@ -48,6 +65,7 @@ const Home = () => {
 						Перейти в панель администратора
 					</button>
 				)}
+
 				{role && (
 					<button 
 						className={`${styles.button} ${styles.secondaryButton}`}
@@ -56,6 +74,7 @@ const Home = () => {
 						Выйти
 					</button>
 				)}
+
 				{!role && (
 					<>
 						<button 
