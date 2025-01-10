@@ -942,6 +942,36 @@ paths:
       tags:
       - hotels
   /owners/rooms:
+    get:
+      description: Возвращает список всех номеров в отелях, принадлежащих текущему
+        владельцу
+      parameters:
+      - description: ID отеля для фильтрации
+        in: query
+        name: hotel_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список номеров
+          schema:
+            items:
+              $ref: '#/definitions/response.RoomResponse'
+            type: array
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Ошибка при получении номеров
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка номеров владельца
+      tags:
+      - rooms
     post:
       consumes:
       - application/json

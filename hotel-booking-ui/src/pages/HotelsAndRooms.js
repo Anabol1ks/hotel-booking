@@ -13,7 +13,10 @@ const HotelsAndRooms = () => {
 	const [filters, setFilters] = useState({
 		minPrice: '',
 		maxPrice: '',
-		capacity: ''
+		capacity: '',
+		startDate: '',
+		endDate: '',
+		hotelId: ''
 	})
 	const navigate = useNavigate()
 
@@ -43,9 +46,13 @@ const HotelsAndRooms = () => {
 			if (filters.minPrice) queryParams.append('min_price', filters.minPrice)
 			if (filters.maxPrice) queryParams.append('max_price', filters.maxPrice)
 			if (filters.capacity) queryParams.append('capacity', filters.capacity)
-			if (selectedHotel) queryParams.append('hotel_id', selectedHotel)
+			if (filters.startDate) queryParams.append('start_date', filters.startDate)
+			if (filters.endDate) queryParams.append('end_date', filters.endDate)
+			if (filters.hotelId) queryParams.append('hotel_id', filters.hotelId)
 
-			const response = await fetch(process.env.REACT_APP_API_URL + `/rooms?${queryParams}`)
+			const response = await fetch(
+				process.env.REACT_APP_API_URL + `/rooms?${queryParams}`
+			)
 			if (response.ok) {
 				const data = await response.json()
 				setRooms(data)
@@ -53,7 +60,8 @@ const HotelsAndRooms = () => {
 		} catch (err) {
 			setError('Ошибка при загрузке номеров')
 		}
-	}, [filters, selectedHotel])
+	}, [filters])
+
 
 	const fetchFavorites = async () => {
 		if (!isAuthenticated) return
@@ -133,13 +141,34 @@ const HotelsAndRooms = () => {
 		fetchFavorites()
 	}, [isAuthenticated])
 
-	const handleFilterChange = (e) => {
+	const handleFilterChange = e => {
 		const { name, value } = e.target
+
+		if (name === 'startDate') {
+			const today = new Date().toISOString().split('T')[0]
+			if (value < today) {
+				alert('Дата не может быть в прошлом')
+				return
+			}
+			if (filters.endDate && value > filters.endDate) {
+				alert('Дата начала не может быть позже даты окончания')
+				return
+			}
+		}
+
+		if (name === 'endDate') {
+			if (filters.startDate && value < filters.startDate) {
+				alert('Дата окончания не может быть раньше даты начала')
+				return
+			}
+		}
+
 		setFilters(prev => ({
 			...prev,
-			[name]: value
+			[name]: value,
 		}))
 	}
+
 
 	const handleBookRoom = async roomId => {
 		if (!isAuthenticated) {
@@ -234,6 +263,35 @@ const HotelsAndRooms = () => {
 						onChange={handleFilterChange}
 						className={styles.filterInput}
 					/>
+					<select
+						name='hotelId'
+						value={filters.hotelId}
+						onChange={handleFilterChange}
+						className={styles.filterInput}
+					>
+						<option value=''>Выберите отель</option>
+						{hotels.map(hotel => (
+							<option key={hotel.ID} value={hotel.ID}>
+								{hotel.Name}
+							</option>
+						))}
+					</select>
+					<input
+						type='date'
+						name='startDate'
+						value={filters.startDate}
+						onChange={handleFilterChange}
+						className={styles.filterInput}
+						min={new Date().toISOString().split('T')[0]}
+					/>
+					<input
+						type='date'
+						name='endDate'
+						value={filters.endDate}
+						onChange={handleFilterChange}
+						className={styles.filterInput}
+						min={filters.startDate || new Date().toISOString().split('T')[0]}
+					/>
 				</div>
 			</div>
 
@@ -267,18 +325,22 @@ const HotelsAndRooms = () => {
 									<div className={styles.bookingDates}>
 										<label>Дата заезда:</label>
 										<input
-											type="date"
+											type='date'
 											value={bookingDates[room.ID]?.startDate || ''}
-											onChange={(e) => handleDateChange(room.ID, 'startDate', e.target.value)}
+											onChange={e =>
+												handleDateChange(room.ID, 'startDate', e.target.value)
+											}
 										/>
 										<label>Дата выезда:</label>
 										<input
-											type="date"
+											type='date'
 											value={bookingDates[room.ID]?.endDate || ''}
-											onChange={(e) => handleDateChange(room.ID, 'endDate', e.target.value)}
+											onChange={e =>
+												handleDateChange(room.ID, 'endDate', e.target.value)
+											}
 										/>
 									</div>
-									<button 
+									<button
 										onClick={() => handleBookRoom(room.ID)}
 										className={styles.bookButton}
 									>
@@ -288,14 +350,14 @@ const HotelsAndRooms = () => {
 							)}
 
 							{favoriteRooms.has(room.ID) ? (
-								<button 
+								<button
 									onClick={() => removeFromFavorites(room.ID)}
 									className={`${styles.favoriteButton} ${styles.removeButton}`}
 								>
 									Убрать из избранного
 								</button>
 							) : (
-								<button 
+								<button
 									onClick={() => handleAddToFavorites(room.ID)}
 									className={styles.favoriteButton}
 								>

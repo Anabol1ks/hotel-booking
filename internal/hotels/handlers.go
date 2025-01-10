@@ -220,6 +220,42 @@ func GetOwnerHotelsHandler(c *gin.Context) {
 }
 
 // @Security BearerAuth
+// GetOwnerRoomsHandler godoc
+// @Summary Получение списка номеров владельца
+// @Description Возвращает список всех номеров в отелях, принадлежащих текущему владельцу
+// @Tags rooms
+// @Produce json
+// @Param hotel_id query string false "ID отеля для фильтрации"
+// @Success 200 {array} response.RoomResponse "Список номеров"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении номеров"
+// @Router /owners/rooms [get]
+func GetOwnerRoomsHandler(c *gin.Context) {
+	ownerID := c.GetUint("user_id")
+	role := c.GetString("role")
+	hotelID := c.Query("hotel_id")
+
+	if role != "owner" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	query := storage.DB.Table("rooms").Joins("JOIN hotels ON rooms.hotel_id = hotels.id").Joins("JOIN users ON hotels.owner_id = users.id").Where("users.id = ?", ownerID)
+
+	if hotelID != "" {
+		query = query.Where("hotels.id = ?", hotelID)
+	}
+
+	var rooms []Room
+	if err := query.Find(&rooms).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении номеров"})
+		return
+	}
+
+	c.JSON(http.StatusOK, rooms)
+}
+
+// @Security BearerAuth
 // ChangeRoomHandler godoc
 // @Summary Изменение номера
 // @Description Изменяет существующий номер. Доступно только для владельцев.
