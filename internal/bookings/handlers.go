@@ -261,6 +261,26 @@ func GetOwnerBookingsHandler(c *gin.Context) {
 }
 
 // @Security BearerAuth
+// GetManagerBookingsHandler godoc
+// @Summary Получунеи своих бронирований
+// @Description Получение бронирований для пользователя
+// @Tags bookings
+// @Produce json
+// @Success 200 {array} response.BookingResponse "Данные о бранировании"
+// Failure 500 {object} response.ErrorResponse "Ошибка при получении бронирований"
+// @Router /bookings/my [get]
+func GetYourBookingsHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var bookings []Booking
+	if err := storage.DB.Where("user_id = ?", userID).Find(&bookings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении бронирований"})
+		return
+	}
+	c.JSON(http.StatusOK, bookings)
+}
+
+// @Security BearerAuth
 // CancelBookingHandler godoc
 // @Summary Отмена бронирования
 // @Description Отмена бронирования пользователем

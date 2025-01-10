@@ -66,6 +66,15 @@ const Home = () => {
 					</button>
 				)}
 
+				{role === 'client' && (
+					<button
+						className={`${styles.button} ${styles.clientButton}`}
+						onClick={() => navigate('/my-bookings')}
+					>
+						Мои бронирования
+					</button>
+				)}
+
 				{role && (
 					<button 
 						className={`${styles.button} ${styles.secondaryButton}`}

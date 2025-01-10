@@ -14,6 +14,8 @@ import CreateHotel from './pages/CreateHotel'
 import OwnerRooms from './pages/OwnerRooms'
 import CreateRoom from './pages/CreateRoom'
 import EditRoom from './pages/EditRoom'
+import MyBooking from './pages/MyBooking'
+
 
 const App = () => {
 	return (
@@ -36,6 +38,7 @@ const App = () => {
         <Route path='/owner/rooms' element={<OwnerRooms />} />
         <Route path='/owner/rooms/create' element={<CreateRoom />} />
         <Route path='/owner/rooms/:id/edit' element={<EditRoom />} />
+				<Route path='/my-bookings' element={<MyBooking />} />
 			</Routes>
 		</Router>
 	)

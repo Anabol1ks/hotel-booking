@@ -342,6 +342,34 @@ const docTemplate = `{
                 }
             }
         },
+        "/booking/my": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение бронирований для пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Получунеи своих бронирований",
+                "responses": {
+                    "200": {
+                        "description": "Данные о бранировании",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.BookingResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/bookings": {
             "post": {
                 "security": [

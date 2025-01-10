@@ -71,6 +71,7 @@ func main() {
 	{
 		authorized.Use(auth.AuthMiddleware())
 		authorized.POST("/bookings", bookings.CreateBookingHandler)
+		authorized.GET("/bookings/my", bookings.GetYourBookingsHandler)
 		authorized.POST("/bookings/:id/pay", payments.CreatePaymentHandler)
 		authorized.DELETE("/bookings/:id", bookings.CancelBookingHandler)
 		authorized.POST("/bookings/:id/refund", payments.RefundPaymentHandler)

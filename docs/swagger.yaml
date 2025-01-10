@@ -456,6 +456,23 @@ paths:
       summary: Запрос на сброс пароля
       tags:
       - auth
+  /booking/my:
+    get:
+      description: Получение бронирований для пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о бранировании
+          schema:
+            items:
+              $ref: '#/definitions/response.BookingResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получунеи своих бронирований
+      tags:
+      - bookings
   /bookings:
     post:
       description: Бронирование номера только для авторизованных пользователей
