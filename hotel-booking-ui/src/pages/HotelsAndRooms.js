@@ -87,7 +87,7 @@ const HotelsAndRooms = () => {
 	const handleAddToFavorites = async (roomId) => {
 		if (!isAuthenticated) {
 			alert('Пожалуйста, авторизуйтесь чтобы добавить номер в избранное')
-			navigate('/login')
+			navigate('auth/login')
 			return
 		}
 
@@ -219,12 +219,39 @@ const HotelsAndRooms = () => {
 	}
 
 	const handleDateChange = (roomId, dateType, value) => {
+		const today = new Date().toISOString().split('T')[0]
+
+		// Validate start date
+		if (dateType === 'startDate') {
+			if (value < today) {
+				alert('Дата не может быть в прошлом')
+				return
+			}
+
+			// Check if end date exists and start date is after end date
+			const currentEndDate = bookingDates[roomId]?.endDate
+			if (currentEndDate && value > currentEndDate) {
+				alert('Дата начала не может быть позже даты окончания')
+				return
+			}
+		}
+
+		// Validate end date
+		if (dateType === 'endDate') {
+			const currentStartDate = bookingDates[roomId]?.startDate
+			if (currentStartDate && value < currentStartDate) {
+				alert('Дата окончания не может быть раньше даты начала')
+				return
+			}
+		}
+
+		// If all validations pass, update booking dates
 		setBookingDates(prev => ({
 			...prev,
 			[roomId]: {
 				...prev[roomId],
-				[dateType]: value
-			}
+				[dateType]: value,
+			},
 		}))
 	}
 
