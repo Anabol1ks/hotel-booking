@@ -40,6 +40,13 @@ const CreateRoom = () => {
 
 	const handleSubmit = async e => {
 		e.preventDefault()
+
+    const submitData = {
+			...formData,
+			hotel_id: parseInt(formData.hotel_id),
+			price: parseFloat(formData.price),
+			capacity: parseInt(formData.capacity),
+		}
 		try {
 			const response = await fetch(
 				process.env.REACT_APP_API_URL + '/owners/rooms',
@@ -49,7 +56,7 @@ const CreateRoom = () => {
 						'Content-Type': 'application/json',
 						Authorization: `Bearer ${Cookies.get('token')}`,
 					},
-					body: JSON.stringify(formData),
+					body: JSON.stringify(submitData),
 				}
 			)
 			if (response.ok) {
