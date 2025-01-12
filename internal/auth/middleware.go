@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
@@ -23,8 +24,26 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный токен"})
-			c.Abort()
+			// Check if it's a system token
+			systemToken, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+				return []byte(os.Getenv("SYSTEM_TOKEN_SECRET")), nil
+			})
+
+			if err != nil || !systemToken.Valid {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный токен"})
+				c.Abort()
+				return
+			}
+
+			claims := systemToken.Claims.(jwt.MapClaims)
+			if claims["system"] != true {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный системный токен"})
+				c.Abort()
+				return
+			}
+
+			c.Set("system", true)
+			c.Next()
 			return
 		}
 

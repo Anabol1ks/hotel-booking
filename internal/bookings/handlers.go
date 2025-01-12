@@ -1,11 +1,16 @@
 package bookings
 
 import (
+	"encoding/json"
+	"fmt"
+	"hotel-booking/internal/auth"
+	"hotel-booking/internal/email"
 	"hotel-booking/internal/hotels"
 	"hotel-booking/internal/storage"
 	"hotel-booking/internal/users"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -85,8 +90,151 @@ func CreateBookingHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при создании бронирования"})
 		return
 	}
+	NotificationCreateBooking(userID, booking)
 
 	c.JSON(http.StatusCreated, booking)
+}
+
+func NotificationCreateBooking(userID uint, booking Booking) {
+	var user users.User
+	if err := storage.DB.First(&user, userID).Error; err != nil {
+		log.Printf("Ошибка при получении пользователя: %v", err)
+		return
+	}
+
+	name := user.Name
+	emailUs := user.Email
+
+	// Использование системного токена
+	systemToken := auth.GetSystemToken()
+
+	createPayUrl := fmt.Sprintf(os.Getenv("URL_BACKEND")+"/bookings/%d/pay", booking.ID)
+	req, err := http.NewRequest("POST", createPayUrl, nil)
+	if err != nil {
+		log.Printf("Ошибка при создании запроса: %v", err)
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+systemToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Отправка запроса
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Ошибка при отправке запроса: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Проверка статуса ответа
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Ошибка: статус ответа %d", resp.StatusCode)
+	}
+
+	// Парсинг ответа
+	var responseBody map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&responseBody); err != nil {
+		log.Printf("Ошибка при чтении ответа: %v", err)
+	}
+
+	// Получение ссылки
+	paymentURL, ok := responseBody["payment_url"]
+	if !ok {
+		log.Printf("Поле 'payment_url' отсутствует в ответе")
+	}
+
+	emailTemplate := `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вами было создано бронирование</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .email-header {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .email-body {
+            padding: 20px;
+            color: #333333;
+        }
+        .email-body p {
+            margin: 0 0 15px;
+            line-height: 1.5;
+        }
+        .email-footer {
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #777;
+        }
+        .reset-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color:rgb(0, 255, 94);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .reset-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Вами было создано бронирование</h1>
+        </div>
+        <div class="email-body">
+            <p>Здравствуйте, %v</p>
+            <p>Вы только что забронировали номер в отеле.</p>
+						<p>Подробности бронирования:</p>
+						<p>Номер: %d</p>
+						<p>Дата заезда: %s</p>
+						<p>Дата выезда: %s</p>
+						<p>Стоимость: %f</p>
+						<p> Пожалуйста, оплатите его в течении 30 минут с момента отправки письма. Оплатить можно по кнопке снизу, или в вашем списке бронирований: </p>
+            <p>https://hotel-booking-sandy.vercel.app/my-bookings</p>
+            <a href="%s" class="reset-button">Перейти к оплате</a>
+            <p>Если если это были не вы, или бронь было оформленна случайно, то отмените её в списках своих бронирований, или бронь удалиться сама через 30 минут.</p>
+            <p>С уважением,<br>Команда поддержки</p>
+        </div>
+        <div class="email-footer">
+            Это письмо было отправлено автоматически. Пожалуйста, не отвечайте на него.
+        </div>
+    </div>
+</body>
+</html>`
+
+	subject := "Вами было создано бронирование"
+	body := fmt.Sprintf(emailTemplate, name, booking.RoomID, booking.StartDate.Format("02.01.2006"), booking.EndDate.Format("02.01.2006"), booking.TotalCost, paymentURL)
+	if err := email.SendEmail(emailUs, subject, body); err != nil {
+		log.Printf("Ошибка при отправке письма: %v", err)
+	}
+
 }
 
 type CreateOfflineBookingInput struct {
