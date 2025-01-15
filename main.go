@@ -47,7 +47,7 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "https://hotel-booking-sandy.vercel.app", "https://zp1v56uxy8rdx5ypatb0ockcb9tr6a-oci3--5173--1b4252dd.local-credentialless.webcontainer-api.io/"}, // Укажи адрес фронтенда React
+		AllowOrigins:     []string{"http://localhost:3000", "https://hotel-booking-sandy.vercel.app"}, // Укажи адрес фронтенда React
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
