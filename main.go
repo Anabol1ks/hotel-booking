@@ -66,6 +66,7 @@ func main() {
 	r.GET("/email/test", email.SendTestEmailHandler)
 	r.POST("/auth/reset-password-request", auth.ResetPasswordRequestHandler)
 	r.POST("/auth/reset-password", auth.ResetPasswordHandler)
+	r.GET("/auth/verify", auth.VerifyHandler)
 
 	authorized := r.Group("/")
 	{
@@ -79,6 +80,7 @@ func main() {
 		authorized.GET("/favorites", hotels.GetFavoritesHandler)
 		authorized.DELETE("/favorites/:room_id", hotels.RemoveFromFavoritesHandler)
 		authorized.POST("/booking/offline", bookings.CreateOfflineBookingHandler)
+		authorized.POST("/auth/send-verification", auth.SendVerifiHandler)
 	}
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 

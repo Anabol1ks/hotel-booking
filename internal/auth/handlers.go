@@ -60,13 +60,24 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
+	verificationToken := make([]byte, 32)
+	_, err = rand.Read(verificationToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось создать токен"})
+		return
+	}
+
+	token := hex.EncodeToString(verificationToken)
+
 	// Создаём пользователя
 	user := users.User{
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: string(hashedPassword),
-		Phone:    input.Phone,
-		Role:     "client",
+		Name:              input.Name,
+		Email:             input.Email,
+		Password:          string(hashedPassword),
+		Phone:             input.Phone,
+		Role:              "client",
+		IsVerified:        false,
+		VerificationToken: token,
 	}
 
 	if err := storage.DB.Create(&user).Error; err != nil {
@@ -75,6 +86,158 @@ func RegisterHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Регистрация успешна"})
+}
+
+// VerifiHandler godoc
+// @Summary Подтверждение почты
+// @Description Подтверждает почту пользователя с использованием токена
+// @Tags auth
+// @Accept json
+// Produce json
+// @Param token query string true "Токен для подтверждения почты"
+// @Success 200 {object} response.SuccessResponse "Почта успешно подтверждена"
+// @Failure 400 {object} response.ErrorResponse "Токен не предоставлен"
+// @Failure 404 {object} response.ErrorResponse "Неверный токен"
+// @Failure 500 {object} response.ErrorResponse "Не удалось обновить пользователя"
+// @Router /auth/verify [get]
+func VerifyHandler(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Токен не предоставлен"})
+		return
+	}
+
+	var user users.User
+	if err := storage.DB.Where("verification_token = ?", token).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Неверный токен"})
+		return
+	}
+
+	user.IsVerified = true
+	user.VerificationToken = ""
+
+	if err := storage.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось обновить пользователя"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Почта успешно подтверждена"})
+}
+
+// @Security BearerAuth
+// SendVerifiHandler godoc
+// @Summary Отправка письма для подтверждения почты
+// @Description Отправляет письмо с ссылкой для подтверждения почты пользователю
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} response.SuccessResponse "Письмо успешно отправлено"
+// @Failure 400 {object} response.ErrorResponse "Почта уже подтверждена"
+// @Failure 404 {object} response.ErrorResponse "Пользователь не найден"
+// @Failure 500 {object} response.ErrorResponse "Не удалось отправить письмо"
+// @Router /auth/send-verification [post]
+func SendVerifiHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var user users.User
+	if err := storage.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
+		return
+	}
+
+	if user.IsVerified {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Почта уже подтверждена"})
+		return
+	}
+
+	veridicationLink := fmt.Sprintf("http://localhost:8080/auth/verify?token=%s", user.VerificationToken)
+	emailTemplate := `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background-color: #4CAF50;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .email-body {
+            padding: 20px;
+            color: #333333;
+        }
+        .email-body h2 {
+            color: #4CAF50;
+        }
+        .email-body p {
+            margin: 10px 0;
+        }
+        .email-footer {
+            text-align: center;
+            padding: 10px;
+            font-size: 12px;
+            color: #777777;
+            background-color: #f9f9f9;
+            border-top: 1px solid #dddddd;
+        }
+        .confirm-button {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        .confirm-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Подтверждение регистрации</h1>
+        </div>
+        <div class="email-body">
+            <h2>Здравствуйте, %s</h2>
+            <p>Благодарим вас за регистрацию! Для подтверждения вашей учетной записи, пожалуйста, перейдите по ссылке ниже:</p>
+            <a href="%s" class="confirm-button">Подтвердить регистрацию</a>
+            <p>Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.</p>
+        </div>
+        <div class="email-footer">
+            <p>© 2025 Ваша Компания. Все права защищены.</p>
+        </div>
+    </div>
+</body>
+</html>
+`
+
+	body := fmt.Sprintf(emailTemplate, user.Name, veridicationLink)
+	subject := "Подтверждение регистрации"
+
+	if err := email.SendEmail(user.Email, subject, body); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось отправить письмо"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Письмо с подтверждением отправлено"})
 }
 
 var jwtSecret = []byte(os.Getenv("JWT_KEY"))

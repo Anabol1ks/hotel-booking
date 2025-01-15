@@ -342,29 +342,94 @@ const docTemplate = `{
                 }
             }
         },
-        "/booking/my": {
-            "get": {
+        "/auth/send-verification": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Получение бронирований для пользователя",
+                "description": "Отправляет письмо с ссылкой для подтверждения почты пользователю",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "bookings"
+                    "auth"
                 ],
-                "summary": "Получунеи своих бронирований",
+                "summary": "Отправка письма для подтверждения почты",
                 "responses": {
                     "200": {
-                        "description": "Данные о бранировании",
+                        "description": "Письмо успешно отправлено",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/response.BookingResponse"
-                            }
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Почта уже подтверждена",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось отправить письмо",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/verify": {
+            "get": {
+                "description": "Подтверждает почту пользователя с использованием токена",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Подтверждение почты",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Токен для подтверждения почты",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Почта успешно подтверждена",
+                        "schema": {
+                            "$ref": "#/definitions/response.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Токен не предоставлен",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Не удалось обновить пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
                         }
                     }
                 }
@@ -425,6 +490,34 @@ const docTemplate = `{
                         "description": "Ошибка при проверке доступности номера или при создании бронирования",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/my": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение бронирований для пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Получунеи своих бронирований",
+                "responses": {
+                    "200": {
+                        "description": "Данные о бранировании",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/response.BookingResponse"
+                            }
                         }
                     }
                 }

@@ -456,23 +456,66 @@ paths:
       summary: Запрос на сброс пароля
       tags:
       - auth
-  /booking/my:
-    get:
-      description: Получение бронирований для пользователя
+  /auth/send-verification:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет письмо с ссылкой для подтверждения почты пользователю
       produces:
       - application/json
       responses:
         "200":
-          description: Данные о бранировании
+          description: Письмо успешно отправлено
           schema:
-            items:
-              $ref: '#/definitions/response.BookingResponse'
-            type: array
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Почта уже подтверждена
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Не удалось отправить письмо
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       security:
       - BearerAuth: []
-      summary: Получунеи своих бронирований
+      summary: Отправка письма для подтверждения почты
       tags:
-      - bookings
+      - auth
+  /auth/verify:
+    get:
+      consumes:
+      - application/json
+      description: Подтверждает почту пользователя с использованием токена
+      parameters:
+      - description: Токен для подтверждения почты
+        in: query
+        name: token
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Почта успешно подтверждена
+          schema:
+            $ref: '#/definitions/response.SuccessResponse'
+        "400":
+          description: Токен не предоставлен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Неверный токен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Не удалось обновить пользователя
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Подтверждение почты
+      tags:
+      - auth
   /bookings:
     post:
       description: Бронирование номера только для авторизованных пользователей
@@ -625,6 +668,23 @@ paths:
       summary: Обработка возврата платежа
       tags:
       - payments
+  /bookings/my:
+    get:
+      description: Получение бронирований для пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные о бранировании
+          schema:
+            items:
+              $ref: '#/definitions/response.BookingResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Получунеи своих бронирований
+      tags:
+      - bookings
   /bookings/offline:
     post:
       consumes:

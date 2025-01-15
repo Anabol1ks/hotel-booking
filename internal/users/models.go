@@ -15,4 +15,6 @@ type User struct {
 	Role               string     `gorm:"type:varchar(20);default:'client'"` // Роли: client, owner, admin, manager
 	ResetPasswordToken string     `gorm:"type:varchar(255)"`                 // Токен для восстановления пароля
 	ResetTokenExpiry   *time.Time // Время токена
+	IsVerified         bool       `gorm:"default:false"`
+	VerificationToken  string     `gorm:"type:varchar(255)"` // Токен для подтверждения почты
 }
