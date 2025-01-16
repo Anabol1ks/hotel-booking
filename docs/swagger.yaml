@@ -104,6 +104,15 @@ definitions:
     - price
     - room_type
     type: object
+  hotels.RatingInput:
+    properties:
+      comment:
+        type: string
+      rating:
+        type: integer
+    required:
+    - rating
+    type: object
   payments.PaymentCallbackRequest:
     properties:
       object:
@@ -159,6 +168,17 @@ definitions:
       error:
         type: string
     type: object
+  response.HotelRatingResponse:
+    properties:
+      comment:
+        type: string
+      hotel_id:
+        type: integer
+      rating:
+        type: number
+      user_id:
+        type: integer
+    type: object
   response.HotelResponse:
     properties:
       address:
@@ -178,6 +198,17 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  response.RoomRatingResponse:
+    properties:
+      comment:
+        type: string
+      rating:
+        type: number
+      room_id:
+        type: integer
+      user_id:
+        type: integer
     type: object
   response.RoomResponse:
     properties:
@@ -853,6 +884,69 @@ paths:
       summary: Получение списка отелей
       tags:
       - hotels
+  /hotels/{hotel_id}/rate:
+    get:
+      description: Получает оценки отеля
+      parameters:
+      - description: ID отеля
+        in: path
+        name: hotel_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список оценок отеля
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/response.HotelRatingResponse'
+              type: array
+            type: array
+        "500":
+          description: Ошибка при получении оценок
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить оценки отеля
+      tags:
+      - ratings
+    post:
+      consumes:
+      - application/json
+      description: Оценивает отель пользователем
+      parameters:
+      - description: ID отеля
+        in: path
+        name: hotel_id
+        required: true
+        type: integer
+      - description: Рейтинг и комментарий
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/hotels.RatingInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Оценка успешно добавлена
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Недопустимый рейтинг/Вы уже оценили этот отель
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Отель не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Оценка отеля
+      tags:
+      - ratings
   /owners/{id}/room:
     delete:
       consumes:
@@ -1193,6 +1287,69 @@ paths:
       summary: Получение бронирований для номера
       tags:
       - rooms
+  /rooms/{room_id}/rate:
+    get:
+      description: Получает оценки номера
+      parameters:
+      - description: ID номера
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список оценок номера
+          schema:
+            items:
+              items:
+                $ref: '#/definitions/response.RoomRatingResponse'
+              type: array
+            type: array
+        "500":
+          description: Ошибка при получении оценок
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить оценки номера
+      tags:
+      - ratings
+    post:
+      consumes:
+      - application/json
+      description: Оценивает номер пользователем
+      parameters:
+      - description: ID номера
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      - description: Рейтинг и комментарий
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/hotels.RatingInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Оценка успешно добавлена
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Недопусти рейтинг/Вы уже оценили этот номер
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Номер не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Оценка номера
+      tags:
+      - ratings
 securityDefinitions:
   BearerAuth:
     in: header

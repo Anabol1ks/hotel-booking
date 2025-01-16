@@ -1,6 +1,8 @@
 package response
 
-import "time"
+import (
+	"time"
+)
 
 // ErrorResponse представляет стандартный формат ответа при ошибке
 // @Description Стандартный ответ при ошибке
@@ -58,4 +60,18 @@ type BookingResponse struct {
 
 type CreatePaymentResponse struct {
 	PaymentURL string `json:"payment_url" example:"ссылка на оплату"` // Ссылка для оплаты
+}
+
+type HotelRatingResponse struct {
+	HotelID uint    `json:"hotel_id"`
+	UserID  uint    `json:"user_id"`
+	Rating  float64 `json:"rating"`
+	Comment string  `json:"comment"`
+}
+
+type RoomRatingResponse struct {
+	RoomID  uint    `json:"room_id"`
+	UserID  uint    `json:"user_id"`
+	Rating  float64 `json:"rating"`
+	Comment string  `json:"comment"`
 }

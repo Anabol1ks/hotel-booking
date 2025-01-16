@@ -960,6 +960,103 @@ const docTemplate = `{
                 }
             }
         },
+        "/hotels/{hotel_id}/rate": {
+            "get": {
+                "description": "Получает оценки отеля",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ratings"
+                ],
+                "summary": "Получить оценки отеля",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID отеля",
+                        "name": "hotel_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список оценок отеля",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/response.HotelRatingResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении оценок",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Оценивает отель пользователем",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ratings"
+                ],
+                "summary": "Оценка отеля",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID отеля",
+                        "name": "hotel_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Рейтинг и комментарий",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hotels.RatingInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Оценка успешно добавлена",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Недопустимый рейтинг/Вы уже оценили этот отель",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Отель не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/owners/bookings": {
             "get": {
                 "security": [
@@ -1483,6 +1580,103 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/rooms/{room_id}/rate": {
+            "get": {
+                "description": "Получает оценки номера",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ratings"
+                ],
+                "summary": "Получить оценки номера",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID номера",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список оценок номера",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/response.RoomRatingResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении оценок",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Оценивает номер пользователем",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ratings"
+                ],
+                "summary": "Оценка номера",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID номера",
+                        "name": "room_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Рейтинг и комментарий",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/hotels.RatingInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Оценка успешно добавлена",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Недопусти рейтинг/Вы уже оценили этот номер",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Номер не найден",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1640,6 +1834,20 @@ const docTemplate = `{
                 }
             }
         },
+        "hotels.RatingInput": {
+            "type": "object",
+            "required": [
+                "rating"
+            ],
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "integer"
+                }
+            }
+        },
         "payments.PaymentCallbackRequest": {
             "type": "object",
             "properties": {
@@ -1725,6 +1933,23 @@ const docTemplate = `{
                 }
             }
         },
+        "response.HotelRatingResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "hotel_id": {
+                    "type": "integer"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "response.HotelResponse": {
             "type": "object",
             "properties": {
@@ -1753,6 +1978,23 @@ const docTemplate = `{
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "response.RoomRatingResponse": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "room_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

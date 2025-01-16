@@ -39,7 +39,7 @@ func main() {
 	storage.ConnectDatabase()
 
 	// Выполнение миграций
-	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Favorite{}, &hotels.Hotel{}, &hotels.Room{}, &bookings.Booking{})
+	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Favorite{}, &hotels.Hotel{}, &hotels.Room{}, &hotels.HotelRating{}, &hotels.RoomRating{}, &bookings.Booking{})
 	if err != nil {
 		log.Fatal("Ошибка миграции:", err)
 	}
@@ -54,19 +54,24 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	{
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	r.POST("/auth/register", auth.RegisterHandler)
-	r.POST("/auth/login", auth.LoginHandler)
+		r.POST("/auth/register", auth.RegisterHandler)
+		r.POST("/auth/login", auth.LoginHandler)
 
-	r.GET("/hotels", hotels.GetHotelsHandler)
-	r.GET("/rooms", hotels.GetRoomsHandler)
-	r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
+		r.GET("/hotels", hotels.GetHotelsHandler)
+		r.GET("/rooms", hotels.GetRoomsHandler)
+		r.GET("/rooms/:id/bookings", bookings.GetRoomBookingsHandler)
 
-	r.GET("/email/test", email.SendTestEmailHandler)
-	r.POST("/auth/reset-password-request", auth.ResetPasswordRequestHandler)
-	r.POST("/auth/reset-password", auth.ResetPasswordHandler)
-	r.GET("/auth/verify", auth.VerifyHandler)
+		r.GET("/email/test", email.SendTestEmailHandler)
+		r.POST("/auth/reset-password-request", auth.ResetPasswordRequestHandler)
+		r.POST("/auth/reset-password", auth.ResetPasswordHandler)
+		r.GET("/auth/verify", auth.VerifyHandler)
+
+		r.GET("hotels/:hotel_id/rate", hotels.GetHotelsRatingsHandler)
+		r.GET("rooms/:id/rate", hotels.GetRoomsRatingsHandler)
+	}
 
 	authorized := r.Group("/")
 	{
@@ -81,6 +86,8 @@ func main() {
 		authorized.DELETE("/favorites/:room_id", hotels.RemoveFromFavoritesHandler)
 		authorized.POST("/booking/offline", bookings.CreateOfflineBookingHandler)
 		authorized.POST("/auth/send-verification", auth.SendVerifiHandler)
+		authorized.POST("/hotels/:hotel_id/rate", hotels.RateHotelHandler)
+		authorized.POST("/rooms/:room_id/rate", hotels.RateRoomHandler)
 	}
 	r.POST("/payments/callback", payments.PaymentCallbackHandler)
 

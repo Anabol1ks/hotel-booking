@@ -454,3 +454,194 @@ func RemoveFromFavoritesHandler(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Номер успешно удален из избранного"})
 }
+
+// Рейтинговая система
+type RatingInput struct {
+	Rating  int    `json:"rating" binding:"required"`
+	Comment string `json:"comment"`
+}
+
+// @Security BearerAuth
+// RateHotelHandler godoc
+// @Summary Оценка отеля
+// @Description Оценивает отель пользователем
+// @Tags ratings
+// @Accept json
+// @Produce json
+// @Param hotel_id path int true "ID отеля"
+// @Param input body RatingInput true "Рейтинг и комментарий"
+// @Success 200 {object} response.MessageResponse "Оценка успешно добавлена"
+// @Failure 400 {object} response.ErrorResponse "Недопустимый рейтинг/Вы уже оценили этот отель"
+// @Failure 404 {object} response.ErrorResponse "Отель не найден"
+// @Router /hotels/{hotel_id}/rate [post]
+func RateHotelHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	hotelID := c.Param("hotel_id")
+
+	var input RatingInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Rating < 1 || input.Rating > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Недопустимый рейтинг"})
+		return
+	}
+
+	var hotel Hotel
+	if err := storage.DB.First(&hotel, hotelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Отель не найден"})
+		return
+	}
+
+	var existingRating HotelRating
+	result := storage.DB.Where("user_id = ? AND hotel_id = ?", userID, hotelID).First(&existingRating)
+	if result.RowsAffected > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Вы уже оценили этот отель"})
+		return
+	}
+
+	rating := HotelRating{
+		HotelID: hotel.ID,
+		UserID:  userID,
+		Rating:  float64(input.Rating),
+		Comment: input.Comment,
+	}
+
+	tx := storage.DB.Begin()
+
+	if err := tx.Create(&rating).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении оценки"})
+		return
+	}
+
+	newAvgRating := (hotel.AverageRating*float64(hotel.RatingsCount) + float64(input.Rating)) / float64(hotel.RatingsCount+1)
+	if err := tx.Model(&hotel).Updates(map[string]interface{}{
+		"average_rating": newAvgRating,
+		"ratings_count":  hotel.RatingsCount + 1,
+	}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении рейтинга"})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Оценка успешно добавлена"})
+
+}
+
+// @Security BearerAuth
+// RateRoomHandler godoc
+// @Summary Оценка номера
+// @Description Оценивает номер пользователем
+// @Tags ratings
+// @Accept json
+// @Produce json
+// @Param room_id path int true "ID номера"
+// @Param input body RatingInput true "Рейтинг и комментарий"
+// @Success 200 {object} response.MessageResponse "Оценка успешно добавлена"
+// @Failure 400 {object} response.ErrorResponse "Недопусти рейтинг/Вы уже оценили этот номер"
+// @Failure 404 {object} response.ErrorResponse "Номер не найден"
+// @Router /rooms/{room_id}/rate [post]
+func RateRoomHandler(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	roomID := c.Param("id")
+
+	var input RatingInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Rating < 1 || input.Rating > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Недопустимый рейтинг"})
+		return
+	}
+
+	var room Room
+	if err := storage.DB.First(&room, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	var existingRating RoomRating
+	result := storage.DB.Where("user_id = ? AND room_id = ?", userID, roomID).First(&existingRating)
+	if result.RowsAffected > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Вы уже оценили этот номер"})
+		return
+	}
+
+	rating := RoomRating{
+		RoomID:  room.ID,
+		UserID:  userID,
+		Rating:  float64(input.Rating),
+		Comment: input.Comment,
+	}
+
+	tx := storage.DB.Begin()
+
+	if err := tx.Create(&rating).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении оценки"})
+		return
+	}
+
+	newAvgRating := (room.AverageRating*float64(room.RatingsCount) + float64(input.Rating)) / float64(room.RatingsCount+1)
+	if err := tx.Model(&room).Updates(map[string]interface{}{
+		"average_rating": newAvgRating,
+		"ratings_count":  room.RatingsCount + 1,
+	}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при обновлении рейтинга"})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Оценка успешно добавлена"})
+}
+
+// GetHotelsRatingsHandler godoc
+// @Summary Получить оценки отеля
+// @Description Получает оценки отеля
+// @Tags ratings
+// @Produce json
+// @Param hotel_id path int true "ID отеля"
+// @Success 200 {array} []response.HotelRatingResponse "Список оценок отеля"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении оценок"
+// @Router /hotels/{hotel_id}/rate [get]
+func GetHotelsRatingsHandler(c *gin.Context) {
+	hotelID := c.Param("hotel_id")
+
+	var retings []HotelRating
+	if err := storage.DB.Where("hotel_id = ?", hotelID).Find(&retings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении оценок"})
+		return
+	}
+
+	c.JSON(http.StatusOK, retings)
+}
+
+// GetRoomsRatingsHandler godoc
+// @Summary Получить оценки номера
+// @Description Получает оценки номера
+// @Tags ratings
+// @Produce json
+// @Param room_id path int true "ID номера"
+// @Success 200 {array} []response.RoomRatingResponse "Список оценок номера"
+// @Failure 500 {object} response.ErrorResponse "Ошибка при получении оценок"
+// @Router /rooms/{room_id}/rate [get]
+func GetRoomsRatingsHandler(c *gin.Context) {
+	roomID := c.Param("id")
+
+	var retings []RoomRating
+	if err := storage.DB.Where("room_id = ?", roomID).Find(&retings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при получении оценок"})
+		return
+	}
+
+	c.JSON(http.StatusOK, retings)
+}
+
+// ---------------------------------------------------------------
