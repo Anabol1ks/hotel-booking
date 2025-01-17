@@ -39,7 +39,7 @@ func main() {
 	storage.ConnectDatabase()
 
 	// Выполнение миграций
-	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Favorite{}, &hotels.Hotel{}, &hotels.Room{}, &hotels.HotelRating{}, &hotels.RoomRating{}, &bookings.Booking{})
+	err := storage.DB.AutoMigrate(&users.User{}, &hotels.Favorite{}, &hotels.Hotel{}, &hotels.Room{}, &hotels.HotelRating{}, &hotels.RoomRating{}, &hotels.RoomImage{}, &bookings.Booking{})
 	if err != nil {
 		log.Fatal("Ошибка миграции:", err)
 	}
@@ -100,6 +100,7 @@ func main() {
 		owners.PUT("/:id/room", hotels.ChangeRoomHandler)
 		owners.DELETE("/:id/room", hotels.DeleteRoomHandler)
 		owners.GET("/rooms", hotels.GetOwnerRoomsHandler)
+		owners.POST("/rooms/:id/images", hotels.UploadRoomImagesHandler)
 	}
 
 	admins := authorized.Group("/admin")

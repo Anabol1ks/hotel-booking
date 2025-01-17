@@ -27,6 +27,14 @@ type Room struct {
 	AverageRating float64 `gorm:"default:0"`
 	RatingsCount  int     `gorm:"default:0"`
 	Ratings       []RoomRating
+	Images        []RoomImage
+}
+
+type RoomImage struct {
+	gorm.Model
+	RoomID    uint   `gorm:"not null"`                   // ID номера
+	ImageURL  string `gorm:"type:varchar(255);not null"` // URL изображения
+	ImageName string `gorm:"type:varchar(100);not null"` // Имя изображения
 }
 
 type Favorite struct {

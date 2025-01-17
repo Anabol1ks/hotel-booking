@@ -2,7 +2,9 @@ package hotels
 
 import (
 	"hotel-booking/internal/storage"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -148,7 +150,7 @@ func CreateRoomHandler(c *gin.Context) {
 func GetRoomsHandler(c *gin.Context) {
 	var rooms []Room
 
-	query := storage.DB
+	query := storage.DB.Preload("Images")
 
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
@@ -645,3 +647,105 @@ func GetRoomsRatingsHandler(c *gin.Context) {
 }
 
 // ---------------------------------------------------------------
+
+// загрузка изображения для номеров и отелей
+
+// @Security BearerAuth
+// UploadHotelImagesHandler godoc
+// @Summary Загрузка изображений для отеля
+// @Description Загружает изображения для отеля
+// @Tags images
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path int true "ID номера"
+// @Param images formData file true "Изображения"
+// @Success 200 {object} response.MessageResponse "Изображения успешно загружены"
+// @Failure 400 {object} response.ErrorResponse "Ошибка при загрузке изображений"
+// @Failure 404 {object} response.ErrorResponse "Отель не найден"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен"
+// @Router /owners/rooms/{id}/images [post]
+func UploadRoomImagesHandler(c *gin.Context) {
+	ownerID := c.GetUint("user_id")
+	roomID := c.Param("id")
+
+	var room Room
+	if err := storage.DB.First(&room, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	var hotel Hotel
+	if err := storage.DB.First(&hotel, room.HotelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Отель не найден"})
+		return
+	}
+
+	if hotel.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка при обработке формы"})
+		return
+	}
+
+	files := form.File["images"]
+	webdavService := NewWebDAVService(
+		"https://webdav.cloud.mail.ru",
+		os.Getenv("WEBDAV_USERNAME"),
+		os.Getenv("WEBDAV_PASSWORD"),
+	)
+	if webdavService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка подключения к облачному хранилищу"})
+		return
+	}
+
+	for _, file := range files {
+		// проверка типа файла
+		if !isImageFile(file.Filename) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Недопустимый тип файла"})
+			return
+		}
+
+		// Чтение файла
+		fileData, err := file.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при чтении файла"})
+			return
+		}
+		defer fileData.Close()
+
+		data, err := io.ReadAll(fileData)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при чтении файла"})
+			return
+		}
+
+		// Генерация уникального имени
+		filename := generateUniqueFilename(file.Filename)
+
+		// Загрузка файла на WebDAV
+		imageUrl, err := webdavService.UploadImage(data, filename)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при загрузке файла"})
+			return
+		}
+
+		roomImage := RoomImage{
+			RoomID:    room.ID,
+			ImageURL:  imageUrl,
+			ImageName: filename,
+		}
+
+		if err := storage.DB.Create(&roomImage).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при сохранении изображения"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Изображения успешно загружены"})
+}
+
+// -------------------------------------------------------------

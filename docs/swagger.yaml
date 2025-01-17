@@ -1182,6 +1182,46 @@ paths:
       summary: Создание нового номера
       tags:
       - rooms
+  /owners/rooms/{id}/images:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображения для отеля
+      parameters:
+      - description: ID номера
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Изображения
+        in: formData
+        name: images
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Изображения успешно загружены
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Ошибка при загрузке изображений
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Отель не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Загрузка изображений для отеля
+      tags:
+      - images
   /payments/callback:
     post:
       consumes:
