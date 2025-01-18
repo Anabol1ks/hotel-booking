@@ -37,8 +37,32 @@ const HotelsAndRooms = () => {
 		}
 	}
 
-	const [selectedHotel, setSelectedHotel] = useState(null)
+	const [currentImageIndexes, setCurrentImageIndexes] = useState({})
 
+	useEffect(() => {
+		const initialIndexes = {}
+		rooms.forEach(room => {
+			initialIndexes[room.ID] = 0
+		})
+		setCurrentImageIndexes(initialIndexes)
+	}, [rooms])
+
+	const nextImage = (roomId, totalImages) => {
+		setCurrentImageIndexes(prev => ({
+			...prev,
+			[roomId]: prev[roomId] === undefined ? 0 : (prev[roomId] + 1) % totalImages,
+		}))
+	}
+
+	const prevImage = (roomId, totalImages) => {
+		setCurrentImageIndexes(prev => ({
+			...prev,
+			[roomId]:
+				prev[roomId] === undefined
+					? 0
+					: (prev[roomId] - 1 + totalImages) % totalImages,
+		}))
+	}
 
 	const fetchRooms = useCallback(async () => {
 		try {
@@ -342,6 +366,39 @@ const HotelsAndRooms = () => {
 				<div className={styles.roomsList}>
 					{rooms.map(room => (
 						<div key={room.ID} className={styles.roomCard}>
+							<div className={styles.roomImages}>
+								{room.Images && room.Images.length > 0 ? (
+									<div className={styles.imageCarousel}>
+										{room.Images.length > 1 && (
+											<button
+												className={`${styles.arrowButton} ${styles.leftArrow}`}
+												onClick={() => prevImage(room.ID, room.Images.length)}
+											>
+												←
+											</button>
+										)}
+										<img
+											src={
+												room.Images[currentImageIndexes[room.ID] || 0]?.ImageURL
+											}
+											alt={`Room ${room.RoomType}`}
+											className={styles.roomImage}
+										/>
+										{room.Images.length > 1 && (
+											<button
+												className={`${styles.arrowButton} ${styles.rightArrow}`}
+												onClick={() => nextImage(room.ID, room.Images.length)}
+											>
+												→
+											</button>
+										)}
+									</div>
+								) : (
+									<div className={styles.noImage}>
+										Нет доступных изображений
+									</div>
+								)}
+							</div>
 							<h3>Тип номера: {room.RoomType}</h3>
 							<p>Цена: {room.Price} руб/ночь</p>
 							<p>Вместимость: {room.Capacity} чел.</p>
