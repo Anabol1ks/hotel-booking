@@ -45,7 +45,7 @@ func (s *WebDAVService) UploadImage(data []byte, filename string) (string, error
 }
 
 func (s *WebDAVService) DeleteImage(filename string) error {
-	filepath := filename
+	filepath := path.Join("/hotel-images", filename)
 	return s.client.Remove(filepath)
 }
 

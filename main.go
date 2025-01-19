@@ -101,6 +101,7 @@ func main() {
 		owners.DELETE("/:id/room", hotels.DeleteRoomHandler)
 		owners.GET("/rooms", hotels.GetOwnerRoomsHandler)
 		owners.POST("/rooms/:id/images", hotels.UploadRoomImagesHandler)
+		owners.DELETE("/rooms/:id/images/:image_id", hotels.DeleteRoomImageHandler)
 	}
 
 	admins := authorized.Group("/admin")

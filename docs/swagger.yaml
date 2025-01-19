@@ -1222,6 +1222,40 @@ paths:
       summary: Загрузка изображений для отеля
       tags:
       - images
+  /owners/rooms/{room_id}/images/{image_id}:
+    delete:
+      description: Удаляет изображение номера
+      parameters:
+      - description: ID номера
+        in: path
+        name: room_id
+        required: true
+        type: integer
+      - description: ID изображения
+        in: path
+        name: image_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Изображение успешно удалено
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Изображение не найдено
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление изображения номера
+      tags:
+      - images
   /payments/callback:
     post:
       consumes:

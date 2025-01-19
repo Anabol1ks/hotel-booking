@@ -748,4 +748,67 @@ func UploadRoomImagesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Изображения успешно загружены"})
 }
 
+// @Security BearerAuth
+// DeleteRoomImageHandler godoc
+// @Summary Удаление изображения номера
+// @Description Удаляет изображение номера
+// @Tags images
+// @Produce json
+// @Param room_id path int true "ID номера"
+// @Param image_id path int true "ID изображения"
+// @Success 200 {object} response.MessageResponse "Изображение успешно удалено"
+// @Failure 403 {object} response.ErrorResponse "Доступ запрещен"
+// @Failure 404 {object} response.ErrorResponse "Изображение не найдено"
+// @Router /owners/rooms/{room_id}/images/{image_id} [delete]
+func DeleteRoomImageHandler(c *gin.Context) {
+	ownerID := c.GetUint("user_id")
+	roomID := c.Param("id")
+	imageID := c.Param("image_id")
+
+	var room Room
+	if err := storage.DB.First(&room, roomID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Номер не найден"})
+		return
+	}
+
+	var hotel Hotel
+	if err := storage.DB.First(&hotel, room.HotelID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Отель не найден"})
+		return
+	}
+
+	if hotel.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		return
+	}
+
+	var image RoomImage
+	if err := storage.DB.Where("id = ? AND room_id = ?", imageID, roomID).First(&image).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Изображение не найдено"})
+		return
+	}
+
+	webdavService := NewWebDAVService(
+		"https://webdav.cloud.mail.ru",
+		os.Getenv("WEBDAV_USERNAME"),
+		os.Getenv("WEBDAV_PASSWORD"),
+	)
+	if webdavService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка подключения к облачному хранилищу"})
+		return
+	}
+
+	if webdavService.DeleteImage(image.ImageName) != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении файла"})
+		return
+	}
+
+	if err := storage.DB.Delete(&image).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка при удалении изображения"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Изображение успешно удалено"})
+}
+
 // -------------------------------------------------------------
